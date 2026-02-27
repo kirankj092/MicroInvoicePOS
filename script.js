@@ -47,6 +47,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${inv.item_name} <span style="color: #94a3b8; font-size: 0.75rem;">x${inv.quantity}</span></td>
                 <td class="text-right text-bold" style="color: #1e4e8c;">$${parseFloat(inv.total).toFixed(2)}</td>
                 <td class="text-right">
+                    <button class="btn-icon preview-btn" data-id="${inv.id}" title="Preview PNG">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </button>
+                    <button class="btn-icon download-btn" data-id="${inv.id}" title="Download PNG">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                    </button>
+                    <button class="btn-icon share-btn" data-id="${inv.id}" title="Share Details">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/></svg>
+                    </button>
                     <button class="btn-icon edit-btn" data-id="${inv.id}" title="Edit">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
                     </button>
@@ -65,6 +74,93 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.delete-btn').forEach(btn => {
             btn.addEventListener('click', () => handleDelete(btn.dataset.id));
         });
+        document.querySelectorAll('.preview-btn').forEach(btn => {
+            btn.addEventListener('click', () => handlePreview(btn.dataset.id, invoices));
+        });
+        document.querySelectorAll('.download-btn').forEach(btn => {
+            btn.addEventListener('click', () => handleDownload(btn.dataset.id, invoices));
+        });
+        document.querySelectorAll('.share-btn').forEach(btn => {
+            btn.addEventListener('click', () => handleShare(btn.dataset.id, invoices));
+        });
+    };
+
+    // PNG Generation Logic
+    const generateInvoiceCanvas = async (invoice) => {
+        const tpl = document.getElementById('invoiceTemplate');
+        document.getElementById('tpl-id').textContent = invoice.id;
+        document.getElementById('tpl-date').textContent = new Date(invoice.created_at).toLocaleDateString();
+        document.getElementById('tpl-customer').textContent = invoice.customer_name;
+        document.getElementById('tpl-item').textContent = invoice.item_name;
+        document.getElementById('tpl-qty').textContent = invoice.quantity;
+        document.getElementById('tpl-price').textContent = `$${parseFloat(invoice.price).toFixed(2)}`;
+        document.getElementById('tpl-total').textContent = `$${parseFloat(invoice.total).toFixed(2)}`;
+        document.getElementById('tpl-grand-total').textContent = `$${parseFloat(invoice.total).toFixed(2)}`;
+
+        return await html2canvas(tpl, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: '#ffffff'
+        });
+    };
+
+    // Handle Preview
+    const handlePreview = async (id, invoices) => {
+        const inv = invoices.find(i => i.id == id);
+        if (!inv) return;
+
+        try {
+            showStatus('Generating preview...', 'success');
+            const canvas = await generateInvoiceCanvas(inv);
+            const imgData = canvas.toDataURL('image/png');
+            const newTab = window.open();
+            newTab.document.write(`<img src="${imgData}" style="max-width: 100%; height: auto;">`);
+        } catch (error) {
+            showStatus('Error generating preview', 'error');
+        }
+    };
+
+    // Handle Download
+    const handleDownload = async (id, invoices) => {
+        const inv = invoices.find(i => i.id == id);
+        if (!inv) return;
+
+        try {
+            showStatus('Preparing download...', 'success');
+            const canvas = await generateInvoiceCanvas(inv);
+            const link = document.createElement('a');
+            link.download = `Invoice_${inv.id}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        } catch (error) {
+            showStatus('Error downloading invoice', 'error');
+        }
+    };
+
+    // Handle Share
+    const handleShare = async (id, invoices) => {
+        const inv = invoices.find(i => i.id == id);
+        if (!inv) return;
+
+        const shareData = {
+            title: `Invoice #${inv.id}`,
+            text: `Invoice for ${inv.customer_name}\nItem: ${inv.item_name}\nTotal: $${parseFloat(inv.total).toFixed(2)}\nDate: ${new Date(inv.created_at).toLocaleDateString()}`,
+            url: window.location.href
+        };
+
+        try {
+            if (navigator.share) {
+                await navigator.share(shareData);
+            } else {
+                // Fallback: Copy to clipboard
+                await navigator.clipboard.writeText(shareData.text);
+                showStatus('Details copied to clipboard!', 'success');
+            }
+        } catch (error) {
+            if (error.name !== 'AbortError') {
+                showStatus('Error sharing invoice', 'error');
+            }
+        }
     };
 
     // Handle Edit (Pre-fill form)
