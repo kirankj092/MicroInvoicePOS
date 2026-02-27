@@ -30,8 +30,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const renderInvoices = (invoices) => {
         invoiceList.innerHTML = '';
         
-        if (!invoices || invoices.length === 0) {
+        if (!invoices || !Array.isArray(invoices) || invoices.length === 0) {
             emptyState.style.display = 'block';
+            if (invoices && invoices.error) {
+                emptyState.textContent = `Error: ${invoices.error}`;
+            } else {
+                emptyState.textContent = 'No invoices recorded yet.';
+            }
             return;
         }
 
