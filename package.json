@@ -4,6 +4,6 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "npx serve -p 3000"
+    "dev": "tsx server.ts"
   }
 }
