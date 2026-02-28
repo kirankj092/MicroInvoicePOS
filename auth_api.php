@@ -67,6 +67,10 @@ switch ($action) {
         $hashed_pass = password_hash($pass, PASSWORD_DEFAULT);
 
         $stmt = $conn->prepare("INSERT INTO users (username, email, password) VALUES (?, ?, ?)");
+        if (!$stmt) {
+            echo json_encode(["error" => "SQL Error: " . $conn->error]);
+            break;
+        }
         $stmt->bind_param("sss", $user, $email, $hashed_pass);
 
         if ($stmt->execute()) {
@@ -83,6 +87,10 @@ switch ($action) {
         $pass = $data['password'] ?? '';
 
         $stmt = $conn->prepare("SELECT id, password FROM users WHERE username = ? OR email = ?");
+        if (!$stmt) {
+            echo json_encode(["error" => "SQL Error: " . $conn->error]);
+            break;
+        }
         $stmt->bind_param("ss", $user, $user);
         $stmt->execute();
         $result = $stmt->get_result();

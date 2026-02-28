@@ -40,7 +40,49 @@ if ($conn->connect_error) {
     echo "Error Number: " . $conn->connect_errno . "\n";
     echo "Error Message: " . $conn->connect_error . "\n";
 } else {
-    echo "CONNECTION SUCCESSFUL!\n";
+    echo "CONNECTION SUCCESSFUL!\n\n";
+    
+    echo "--- Table Check ---\n";
+    $tables = ['users', 'invoices'];
+    foreach ($tables as $table) {
+        $result = $conn->query("SHOW TABLES LIKE '$table'");
+        if ($result->num_rows > 0) {
+            echo "✅ Table '$table' exists.\n";
+            
+            // Check columns for 'invoices'
+            if ($table === 'invoices') {
+                $columns = $conn->query("SHOW COLUMNS FROM invoices");
+                echo "   Columns in 'invoices': ";
+                $cols = [];
+                while($col = $columns->fetch_assoc()) $cols[] = $col['Field'];
+                echo implode(", ", $cols) . "\n";
+            }
+        } else {
+            echo "❌ Table '$table' MISSING!\n";
+            echo "   Run the following SQL in your Hostinger phpMyAdmin:\n\n";
+            if ($table === 'users') {
+                echo "CREATE TABLE users (\n";
+                echo "    id INT AUTO_INCREMENT PRIMARY KEY,\n";
+                echo "    username VARCHAR(50) NOT NULL UNIQUE,\n";
+                echo "    email VARCHAR(100) NOT NULL UNIQUE,\n";
+                echo "    password VARCHAR(255) NOT NULL,\n";
+                echo "    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n";
+                echo ");\n\n";
+            } else {
+                echo "CREATE TABLE invoices (\n";
+                echo "    id INT AUTO_INCREMENT PRIMARY KEY,\n";
+                echo "    user_id INT NOT NULL,\n";
+                echo "    customer_name VARCHAR(100),\n";
+                echo "    item_name VARCHAR(100),\n";
+                echo "    price DECIMAL(10,2),\n";
+                echo "    quantity INT,\n";
+                echo "    total DECIMAL(10,2),\n";
+                echo "    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,\n";
+                echo "    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE\n";
+                echo ");\n\n";
+            }
+        }
+    }
     $conn->close();
 }
 ?>

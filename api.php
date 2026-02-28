@@ -60,6 +60,10 @@ switch ($action) {
     case 'read':
         $user_id = $_SESSION['user_id'];
         $stmt = $conn->prepare("SELECT * FROM invoices WHERE user_id = ? ORDER BY created_at DESC");
+        if (!$stmt) {
+            echo json_encode(["error" => "SQL Error: " . $conn->error]);
+            break;
+        }
         $stmt->bind_param("i", $user_id);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -85,6 +89,10 @@ switch ($action) {
         $total = $price * $quantity;
 
         $stmt = $conn->prepare("INSERT INTO invoices (user_id, customer_name, item_name, price, quantity, total) VALUES (?, ?, ?, ?, ?, ?)");
+        if (!$stmt) {
+            echo json_encode(["error" => "SQL Error: " . $conn->error]);
+            break;
+        }
         $stmt->bind_param("issdid", $user_id, $customer, $item, $price, $quantity, $total);
         
         if ($stmt->execute()) {
@@ -108,6 +116,10 @@ switch ($action) {
         $total = $price * $quantity;
 
         $stmt = $conn->prepare("UPDATE invoices SET customer_name=?, item_name=?, price=?, quantity=?, total=? WHERE id=? AND user_id=?");
+        if (!$stmt) {
+            echo json_encode(["error" => "SQL Error: " . $conn->error]);
+            break;
+        }
         $stmt->bind_param("ssdidii", $customer, $item, $price, $quantity, $total, $id, $user_id);
         
         if ($stmt->execute()) {
@@ -124,6 +136,10 @@ switch ($action) {
         $id = $data['id'] ?? 0;
 
         $stmt = $conn->prepare("DELETE FROM invoices WHERE id=? AND user_id=?");
+        if (!$stmt) {
+            echo json_encode(["error" => "SQL Error: " . $conn->error]);
+            break;
+        }
         $stmt->bind_param("ii", $id, $user_id);
         
         if ($stmt->execute()) {
