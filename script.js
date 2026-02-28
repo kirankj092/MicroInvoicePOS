@@ -15,8 +15,34 @@ document.addEventListener('DOMContentLoaded', () => {
     const formPreviewBtn = document.getElementById('formPreviewBtn');
     const formDownloadBtn = document.getElementById('formDownloadBtn');
     const formShareBtn = document.getElementById('formShareBtn');
+    const userNameDisplay = document.getElementById('userNameDisplay');
+    const logoutBtn = document.getElementById('logoutBtn');
 
     let editingId = null;
+
+    // Fetch User Info
+    const fetchUserInfo = async () => {
+        try {
+            const response = await fetch('auth_api.php?action=check');
+            const data = await response.json();
+            if (data.authenticated) {
+                userNameDisplay.textContent = `Welcome, ${data.username}`;
+            }
+        } catch (error) {
+            console.log("Auth check skipped in preview");
+        }
+    };
+
+    // Logout Logic
+    logoutBtn.addEventListener('click', async () => {
+        if (!confirm('Are you sure you want to logout?')) return;
+        try {
+            await fetch('auth_api.php?action=logout');
+            window.location.href = 'auth.html';
+        } catch (error) {
+            window.location.href = 'auth.html';
+        }
+    });
 
     // Fetch Invoices (Read)
     const fetchInvoices = async () => {
@@ -301,5 +327,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Initial Load
+    fetchUserInfo();
     fetchInvoices();
 });

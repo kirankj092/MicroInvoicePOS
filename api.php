@@ -16,7 +16,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     exit;
 }
 
-// 2. Load Database Credentials from the local Hostinger file
+// 2. Load Authentication Middleware
+// This protects all API actions below
+require_once('auth_check.php');
+
+// 3. Load Database Credentials from the local Hostinger file
 // This file is NOT on GitHub, keeping your password safe!
 if (!file_exists('db_config.php')) {
     die(json_encode(["error" => "Configuration file (db_config.php) missing on server."]));
