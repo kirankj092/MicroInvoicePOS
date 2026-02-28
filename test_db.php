@@ -9,6 +9,7 @@ ini_set('display_errors', 1);
 header('Content-Type: text/plain');
 
 echo "--- Database Connection Test ---\n";
+echo "PHP Version: " . PHP_VERSION . "\n";
 
 if (!file_exists('db_config.php')) {
     die("ERROR: db_config.php not found!\n");
@@ -93,5 +94,22 @@ if ($conn->connect_error) {
         }
     }
     $conn->close();
+}
+
+echo "\n--- Session Check ---\n";
+$session_path = session_save_path();
+echo "Session save path: " . ($session_path ?: "Default") . "\n";
+if (is_writable($session_path ?: sys_get_temp_dir())) {
+    echo "✅ Session path is writable.\n";
+} else {
+    echo "❌ Session path is NOT writable!\n";
+}
+
+session_start();
+$_SESSION['test_val'] = 'hello';
+if (isset($_SESSION['test_val']) && $_SESSION['test_val'] === 'hello') {
+    echo "✅ Session read/write working.\n";
+} else {
+    echo "❌ Session read/write FAILED.\n";
 }
 ?>

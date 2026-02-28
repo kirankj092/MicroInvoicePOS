@@ -2,10 +2,7 @@
 ob_start();
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
-/**
- * auth_api.php - Secure Authentication Backend
- * Handles Login, Registration, and Session Management
- */
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
 // 1. Secure Session Configuration
 ini_set('session.cookie_httponly', 1);
@@ -52,9 +49,10 @@ function getJsonInput() {
     return json_decode(file_get_contents('php://input'), true);
 }
 
-$action = $_GET['action'] ?? '';
+try {
+    $action = $_GET['action'] ?? '';
 
-switch ($action) {
+    switch ($action) {
     case 'register':
         $data = getJsonInput();
         $user = $data['username'] ?? '';
@@ -132,6 +130,13 @@ switch ($action) {
     default:
         echo json_encode(["error" => "Invalid action."]);
         break;
+}
+} catch (Exception $e) {
+    ob_clean();
+    echo json_encode([
+        "error" => "Server Exception",
+        "details" => $e->getMessage()
+    ]);
 }
 
 $conn->close();

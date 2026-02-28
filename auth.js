@@ -43,11 +43,25 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             
             if (!response.ok) {
-                const errorData = await response.json().catch(() => ({ error: 'Server Error ' + response.status }));
-                throw new Error(errorData.error || errorData.details || 'Registration failed');
+                let errorMsg = 'Server Error ' + response.status;
+                try {
+                    const errorData = await response.json();
+                    errorMsg = errorData.error || errorData.details || errorMsg;
+                } catch (e) {
+                    const rawText = await response.text();
+                    if (rawText) errorMsg = rawText.substring(0, 200);
+                }
+                throw new Error(errorMsg);
             }
 
-            const result = await response.json();
+            let result;
+            const responseText = await response.text();
+            try {
+                result = JSON.parse(responseText);
+            } catch (e) {
+                console.error('JSON Parse Error. Raw response:', responseText);
+                throw new Error("Server Error: " + responseText.substring(0, 300));
+            }
 
             if (result.success) {
                 showStatus(regStatus, result.message, 'success');
@@ -77,11 +91,25 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (!response.ok) {
-                const errorData = await response.json().catch(() => ({ error: 'Server Error ' + response.status }));
-                throw new Error(errorData.error || errorData.details || 'Login failed');
+                let errorMsg = 'Server Error ' + response.status;
+                try {
+                    const errorData = await response.json();
+                    errorMsg = errorData.error || errorData.details || errorMsg;
+                } catch (e) {
+                    const rawText = await response.text();
+                    if (rawText) errorMsg = rawText.substring(0, 200);
+                }
+                throw new Error(errorMsg);
             }
 
-            const result = await response.json();
+            let result;
+            const responseText = await response.text();
+            try {
+                result = JSON.parse(responseText);
+            } catch (e) {
+                console.error('JSON Parse Error. Raw response:', responseText);
+                throw new Error("Server Error: " + responseText.substring(0, 300));
+            }
 
             if (result.success) {
                 showStatus(loginStatus, 'Login successful! Redirecting...', 'success');

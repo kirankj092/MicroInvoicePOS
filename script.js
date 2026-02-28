@@ -57,10 +57,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             if (!response.ok) {
-                const errorData = await response.json().catch(() => ({ error: 'Server Error ' + response.status }));
-                throw new Error(errorData.error || errorData.details || 'Failed to fetch');
+                let errorMsg = 'Server Error ' + response.status;
+                try {
+                    const errorData = await response.json();
+                    errorMsg = errorData.error || errorData.details || errorMsg;
+                } catch (e) {
+                    // If not JSON, get raw text
+                    const rawText = await response.text();
+                    if (rawText) errorMsg = rawText.substring(0, 200);
+                }
+                throw new Error(errorMsg);
             }
-            const invoices = await response.json();
+            
+            let invoices;
+            const responseText = await response.text();
+            try {
+                invoices = JSON.parse(responseText);
+            } catch (e) {
+                console.error('JSON Parse Error. Raw response:', responseText);
+                throw new Error("Server returned invalid data. Raw response: " + responseText.substring(0, 300));
+            }
             renderInvoices(invoices);
         } catch (error) {
             console.error('Error fetching invoices:', error);
@@ -328,11 +344,25 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (!response.ok) {
-                const errorData = await response.json().catch(() => ({ error: 'Server Error ' + response.status }));
-                throw new Error(errorData.error || errorData.details || 'Save failed');
+                let errorMsg = 'Server Error ' + response.status;
+                try {
+                    const errorData = await response.json();
+                    errorMsg = errorData.error || errorData.details || errorMsg;
+                } catch (e) {
+                    const rawText = await response.text();
+                    if (rawText) errorMsg = rawText.substring(0, 200);
+                }
+                throw new Error(errorMsg);
             }
 
-            const result = await response.json();
+            let result;
+            const responseText = await response.text();
+            try {
+                result = JSON.parse(responseText);
+            } catch (e) {
+                console.error('JSON Parse Error. Raw response:', responseText);
+                throw new Error("Server returned invalid data. Raw response: " + responseText.substring(0, 300));
+            }
 
             if (result.success) {
                 showStatus(editingId ? 'Invoice updated!' : 'Invoice saved!', 'success');

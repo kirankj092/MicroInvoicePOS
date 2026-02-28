@@ -2,12 +2,7 @@
 ob_start();
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
-/**
- * api.php - Secure CRUD Backend for Micro Invoice POS
- * Designed for Hostinger Auto-Deploy (GitHub Sync Ready)
- */
-
-// 1. CORS Headers - Essential for Frontend-Backend Communication
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
@@ -51,14 +46,15 @@ if ($conn->connect_error) {
 }
 
 // 4. Handle Actions
-$action = $_GET['action'] ?? '';
+try {
+    $action = $_GET['action'] ?? '';
 
-// Helper function to read JSON body from JavaScript fetch
-function getJsonInput() {
-    return json_decode(file_get_contents('php://input'), true);
-}
+    // Helper function to read JSON body from JavaScript fetch
+    function getJsonInput() {
+        return json_decode(file_get_contents('php://input'), true);
+    }
 
-switch ($action) {
+    switch ($action) {
     case 'read':
         $user_id = $_SESSION['user_id'];
         $stmt = $conn->prepare("SELECT * FROM invoices WHERE user_id = ? ORDER BY created_at DESC");
@@ -155,6 +151,13 @@ switch ($action) {
     default:
         echo json_encode(["error" => "Invalid action requested"]);
         break;
+}
+} catch (Exception $e) {
+    ob_clean();
+    echo json_encode([
+        "error" => "Server Exception",
+        "details" => $e->getMessage()
+    ]);
 }
 
 $conn->close();
