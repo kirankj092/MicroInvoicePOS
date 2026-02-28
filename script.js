@@ -52,6 +52,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const fetchInvoices = async () => {
         try {
             const response = await fetch('api.php?action=read');
+            if (response.status === 401) {
+                window.location.href = 'auth.html';
+                return;
+            }
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({ error: 'Server Error ' + response.status }));
                 throw new Error(errorData.error || errorData.details || 'Failed to fetch');
@@ -317,6 +321,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify(data),
                 headers: { 'Content-Type': 'application/json' }
             });
+
+            if (response.status === 401) {
+                window.location.href = 'auth.html';
+                return;
+            }
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({ error: 'Server Error ' + response.status }));

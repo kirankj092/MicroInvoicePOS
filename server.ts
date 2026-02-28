@@ -1,6 +1,7 @@
 import express from "express";
 import Database from "better-sqlite3";
 import path from "path";
+import fs from "fs";
 
 const db = new Database("invoices.db");
 
@@ -31,8 +32,20 @@ const PORT = 3000;
 
 app.use(express.json());
 
-// Mock session for preview
+// Mock session for preview - Persist to file to survive restarts
+const SESSION_FILE = './mock_session.json';
 let mockSession: any = {};
+try {
+    if (fs.existsSync(SESSION_FILE)) {
+        mockSession = JSON.parse(fs.readFileSync(SESSION_FILE, 'utf8'));
+    }
+} catch (e) {
+    mockSession = {};
+}
+
+const saveSession = () => {
+    fs.writeFileSync(SESSION_FILE, JSON.stringify(mockSession));
+};
 
 // Mock auth_api.php
 app.all("/auth_api.php", (req, res) => {
@@ -53,6 +66,7 @@ app.all("/auth_api.php", (req, res) => {
             if (user && user.password === password) {
                 mockSession.user_id = user.id;
                 mockSession.username = user.username;
+                saveSession();
                 return res.json({ success: true });
             }
             return res.json({ error: "Invalid credentials" });
@@ -67,6 +81,7 @@ app.all("/auth_api.php", (req, res) => {
 
         if (action === 'logout') {
             mockSession = {};
+            saveSession();
             return res.json({ success: true });
         }
 
