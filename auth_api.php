@@ -1,5 +1,7 @@
 <?php
 ob_start();
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 /**
  * auth_api.php - Secure Authentication Backend
  * Handles Login, Registration, and Session Management

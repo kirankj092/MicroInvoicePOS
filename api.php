@@ -1,5 +1,7 @@
 <?php
 ob_start();
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 /**
  * api.php - Secure CRUD Backend for Micro Invoice POS
  * Designed for Hostinger Auto-Deploy (GitHub Sync Ready)

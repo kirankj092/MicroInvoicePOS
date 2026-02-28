@@ -49,13 +49,22 @@ if ($conn->connect_error) {
         if ($result->num_rows > 0) {
             echo "✅ Table '$table' exists.\n";
             
-            // Check columns for 'invoices'
+            // Check for critical user_id column
             if ($table === 'invoices') {
                 $columns = $conn->query("SHOW COLUMNS FROM invoices");
-                echo "   Columns in 'invoices': ";
                 $cols = [];
-                while($col = $columns->fetch_assoc()) $cols[] = $col['Field'];
-                echo implode(", ", $cols) . "\n";
+                $has_user_id = false;
+                while($col = $columns->fetch_assoc()) {
+                    $cols[] = $col['Field'];
+                    if ($col['Field'] === 'user_id') $has_user_id = true;
+                }
+                echo "   Columns: " . implode(", ", $cols) . "\n";
+                
+                if (!$has_user_id) {
+                    echo "   ❌ CRITICAL ERROR: 'user_id' column is MISSING!\n";
+                    echo "   Run this SQL to fix it:\n";
+                    echo "   ALTER TABLE invoices ADD COLUMN user_id INT NOT NULL AFTER id;\n";
+                }
             }
         } else {
             echo "❌ Table '$table' MISSING!\n";
