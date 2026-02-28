@@ -28,11 +28,22 @@ if (!file_exists('db_config.php')) {
 require_once('db_config.php');
 
 // 3. Establish Connection
-$conn = new mysqli($host, $username, $password, $dbname);
+// Support multiple variable naming conventions (Hostinger vs Standard)
+$db_host = $host ?? $servername ?? 'localhost';
+$db_user = $username ?? $db_user ?? $user ?? '';
+$db_pass = $password ?? $db_pass ?? $pass ?? '';
+$db_name = $dbname ?? $db_name ?? '';
+
+$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
 
 // Check connection
 if ($conn->connect_error) {
-    die(json_encode(["error" => "Database connection failed: " . $conn->connect_error]));
+    http_response_code(500);
+    die(json_encode([
+        "error" => "Database connection failed",
+        "details" => $conn->connect_error,
+        "hint" => "Check your db_config.php variable names ($host, $username, $password, $dbname)"
+    ]));
 }
 
 // 4. Handle Actions

@@ -52,10 +52,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const fetchInvoices = async () => {
         try {
             const response = await fetch('api.php?action=read');
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ error: 'Server Error ' + response.status }));
+                throw new Error(errorData.error || errorData.details || 'Failed to fetch');
+            }
             const invoices = await response.json();
             renderInvoices(invoices);
         } catch (error) {
             console.error('Error fetching invoices:', error);
+            if (emptyState) {
+                emptyState.style.display = 'block';
+                emptyState.textContent = 'Connection Error: ' + error.message;
+            }
         }
     };
 
@@ -310,6 +318,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Content-Type': 'application/json' }
             });
 
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ error: 'Server Error ' + response.status }));
+                throw new Error(errorData.error || errorData.details || 'Save failed');
+            }
+
             const result = await response.json();
 
             if (result.success) {
@@ -326,7 +339,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 showStatus('Error: ' + (result.error || 'Unknown error'), 'error');
             }
         } catch (error) {
-            showStatus('Network error. Check your server connection.', 'error');
+            console.error('Error saving invoice:', error);
+            showStatus('Connection Error: ' + error.message, 'error');
         }
     });
 

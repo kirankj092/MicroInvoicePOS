@@ -25,10 +25,22 @@ if (!file_exists('db_config.php')) {
     die(json_encode(["error" => "Configuration file missing."]));
 }
 require_once('db_config.php');
-$conn = new mysqli($host, $username, $password, $dbname);
+
+// Support multiple variable naming conventions
+$db_host = $host ?? $servername ?? 'localhost';
+$db_user = $username ?? $db_user ?? $user ?? '';
+$db_pass = $password ?? $db_pass ?? $pass ?? '';
+$db_name = $dbname ?? $db_name ?? '';
+
+$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
 
 if ($conn->connect_error) {
-    die(json_encode(["error" => "Database connection failed."]));
+    http_response_code(500);
+    die(json_encode([
+        "error" => "Database connection failed",
+        "details" => $conn->connect_error,
+        "hint" => "Check your db_config.php variable names ($host, $username, $password, $dbname)"
+    ]));
 }
 
 // Helper to get JSON input
