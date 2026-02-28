@@ -41,6 +41,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify(data),
                 headers: { 'Content-Type': 'application/json' }
             });
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ error: 'Server Error ' + response.status }));
+                throw new Error(errorData.error || errorData.details || 'Registration failed');
+            }
+
             const result = await response.json();
 
             if (result.success) {
@@ -50,7 +56,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 showStatus(regStatus, result.error, 'error');
             }
         } catch (error) {
-            showStatus(regStatus, 'Registration failed. Check connection.', 'error');
+            console.error('Registration error:', error);
+            showStatus(regStatus, 'Error: ' + error.message, 'error');
         }
     });
 
@@ -68,6 +75,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify(data),
                 headers: { 'Content-Type': 'application/json' }
             });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ error: 'Server Error ' + response.status }));
+                throw new Error(errorData.error || errorData.details || 'Login failed');
+            }
+
             const result = await response.json();
 
             if (result.success) {
@@ -77,7 +90,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 showStatus(loginStatus, result.error, 'error');
             }
         } catch (error) {
-            showStatus(loginStatus, 'Login failed. Check connection.', 'error');
+            console.error('Login error:', error);
+            showStatus(loginStatus, 'Error: ' + error.message, 'error');
         }
     });
 

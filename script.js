@@ -66,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Error fetching invoices:', error);
             if (emptyState) {
                 emptyState.style.display = 'block';
-                emptyState.textContent = 'Connection Error: ' + error.message;
+                emptyState.textContent = 'Connection Error: ' + error.message + ' (Try Ctrl+F5 to clear cache)';
             }
         }
     };
@@ -349,7 +349,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (error) {
             console.error('Error saving invoice:', error);
-            showStatus('Connection Error: ' + error.message, 'error');
+            showStatus('Connection Error: ' + error.message + ' (Try Ctrl+F5 to clear cache)', 'error');
         }
     });
 
