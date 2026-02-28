@@ -21,7 +21,6 @@ const app = express();
 const PORT = 3000;
 
 app.use(express.json());
-app.use(express.static(path.join(process.cwd(), ".")));
 
 // Mock api.php for the preview environment
 app.all("/api.php", (req, res) => {
@@ -66,6 +65,8 @@ app.all("/api.php", (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+
+app.use(express.static(path.join(process.cwd(), ".")));
 
 app.listen(PORT, "0.0.0.0", () => {
     console.log(`Preview server running on http://localhost:${PORT}`);

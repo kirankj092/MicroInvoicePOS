@@ -12,6 +12,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const emptyState = document.getElementById('emptyState');
     const statusMessage = document.getElementById('statusMessage');
     const saveBtn = document.getElementById('saveBtn');
+    const formPreviewBtn = document.getElementById('formPreviewBtn');
+    const formDownloadBtn = document.getElementById('formDownloadBtn');
+    const formShareBtn = document.getElementById('formShareBtn');
 
     let editingId = null;
 
@@ -110,8 +113,8 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Handle Preview
-    const handlePreview = async (id, invoices) => {
-        const inv = invoices.find(i => i.id == id);
+    const handlePreview = async (id, invoices, directData = null) => {
+        const inv = directData || invoices.find(i => i.id == id);
         if (!inv) return;
 
         try {
@@ -119,15 +122,19 @@ document.addEventListener('DOMContentLoaded', () => {
             const canvas = await generateInvoiceCanvas(inv);
             const imgData = canvas.toDataURL('image/png');
             const newTab = window.open();
-            newTab.document.write(`<img src="${imgData}" style="max-width: 100%; height: auto;">`);
+            if (newTab) {
+                newTab.document.write(`<img src="${imgData}" style="max-width: 100%; height: auto;">`);
+            } else {
+                showStatus('Popup blocked! Please allow popups.', 'error');
+            }
         } catch (error) {
             showStatus('Error generating preview', 'error');
         }
     };
 
     // Handle Download
-    const handleDownload = async (id, invoices) => {
-        const inv = invoices.find(i => i.id == id);
+    const handleDownload = async (id, invoices, directData = null) => {
+        const inv = directData || invoices.find(i => i.id == id);
         if (!inv) return;
 
         try {
@@ -143,8 +150,8 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Handle Share
-    const handleShare = async (id, invoices) => {
-        const inv = invoices.find(i => i.id == id);
+    const handleShare = async (id, invoices, directData = null) => {
+        const inv = directData || invoices.find(i => i.id == id);
         if (!inv) return;
 
         const shareData = {
@@ -229,6 +236,23 @@ document.addEventListener('DOMContentLoaded', () => {
     // Event Listeners
     priceInput.addEventListener('input', updateTotal);
     quantityInput.addEventListener('input', updateTotal);
+
+    // Form Action Buttons
+    const getFormData = () => {
+        return {
+            id: editingId || 'NEW',
+            customer_name: document.getElementById('customerName').value || 'Customer Name',
+            item_name: document.getElementById('itemName').value || 'Item Name',
+            price: parseFloat(priceInput.value) || 0,
+            quantity: parseInt(quantityInput.value) || 0,
+            total: (parseFloat(priceInput.value) || 0) * (parseInt(quantityInput.value) || 0),
+            created_at: new Date().toISOString()
+        };
+    };
+
+    formPreviewBtn.addEventListener('click', () => handlePreview(null, null, getFormData()));
+    formDownloadBtn.addEventListener('click', () => handleDownload(null, null, getFormData()));
+    formShareBtn.addEventListener('click', () => handleShare(null, null, getFormData()));
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
