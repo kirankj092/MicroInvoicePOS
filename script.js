@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const formShareBtn = document.getElementById('formShareBtn');
     const userNameDisplay = document.getElementById('userNameDisplay');
     const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) console.log("Logout button initialized");
 
     let editingId = null;
 
@@ -34,15 +35,18 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Logout Logic
-    logoutBtn.addEventListener('click', async () => {
-        if (!confirm('Are you sure you want to logout?')) return;
-        try {
-            await fetch('auth_api.php?action=logout');
-            window.location.href = 'auth.html';
-        } catch (error) {
-            window.location.href = 'auth.html';
-        }
-    });
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', async () => {
+            if (!confirm('Are you sure you want to logout?')) return;
+            try {
+                await fetch('auth_api.php?action=logout');
+                window.location.href = 'auth.html';
+            } catch (error) {
+                console.error("Logout failed:", error);
+                window.location.href = 'auth.html';
+            }
+        });
+    }
 
     // Fetch Invoices (Read)
     const fetchInvoices = async () => {

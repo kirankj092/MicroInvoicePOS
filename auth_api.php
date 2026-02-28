@@ -7,7 +7,7 @@
 // 1. Secure Session Configuration
 ini_set('session.cookie_httponly', 1);
 ini_set('session.use_only_cookies', 1);
-ini_set('session.cookie_secure', 1); // Set to 1 if using HTTPS
+ini_set('session.cookie_secure', isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 1 : 0);
 session_start();
 
 header("Access-Control-Allow-Origin: *");
