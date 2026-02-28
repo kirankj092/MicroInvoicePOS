@@ -45,7 +45,11 @@ function getJsonInput() {
 
 switch ($action) {
     case 'read':
-        $result = $conn->query("SELECT * FROM invoices ORDER BY created_at DESC");
+        $user_id = $_SESSION['user_id'];
+        $stmt = $conn->prepare("SELECT * FROM invoices WHERE user_id = ? ORDER BY created_at DESC");
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
         $invoices = [];
         if ($result) {
             while ($row = $result->fetch_assoc()) {
@@ -53,20 +57,22 @@ switch ($action) {
             }
         }
         echo json_encode($invoices);
+        $stmt->close();
         break;
 
     case 'create':
         $data = getJsonInput();
         if (!$data) { echo json_encode(["error" => "No data provided"]); break; }
         
+        $user_id = $_SESSION['user_id'];
         $customer = $data['customer_name'] ?? '';
         $item = $data['item_name'] ?? '';
         $price = $data['price'] ?? 0;
         $quantity = $data['quantity'] ?? 0;
         $total = $price * $quantity;
 
-        $stmt = $conn->prepare("INSERT INTO invoices (customer_name, item_name, price, quantity, total) VALUES (?, ?, ?, ?, ?)");
-        $stmt->bind_param("ssdid", $customer, $item, $price, $quantity, $total);
+        $stmt = $conn->prepare("INSERT INTO invoices (user_id, customer_name, item_name, price, quantity, total) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("issdid", $user_id, $customer, $item, $price, $quantity, $total);
         
         if ($stmt->execute()) {
             echo json_encode(["success" => true, "id" => $stmt->insert_id]);
@@ -80,6 +86,7 @@ switch ($action) {
         $data = getJsonInput();
         if (!$data) { echo json_encode(["error" => "No data provided"]); break; }
 
+        $user_id = $_SESSION['user_id'];
         $id = $data['id'] ?? 0;
         $customer = $data['customer_name'] ?? '';
         $item = $data['item_name'] ?? '';
@@ -87,8 +94,8 @@ switch ($action) {
         $quantity = $data['quantity'] ?? 0;
         $total = $price * $quantity;
 
-        $stmt = $conn->prepare("UPDATE invoices SET customer_name=?, item_name=?, price=?, quantity=?, total=? WHERE id=?");
-        $stmt->bind_param("ssdidi", $customer, $item, $price, $quantity, $total, $id);
+        $stmt = $conn->prepare("UPDATE invoices SET customer_name=?, item_name=?, price=?, quantity=?, total=? WHERE id=? AND user_id=?");
+        $stmt->bind_param("ssdidii", $customer, $item, $price, $quantity, $total, $id, $user_id);
         
         if ($stmt->execute()) {
             echo json_encode(["success" => true]);
@@ -100,10 +107,11 @@ switch ($action) {
 
     case 'delete':
         $data = getJsonInput();
+        $user_id = $_SESSION['user_id'];
         $id = $data['id'] ?? 0;
 
-        $stmt = $conn->prepare("DELETE FROM invoices WHERE id=?");
-        $stmt->bind_param("i", $id);
+        $stmt = $conn->prepare("DELETE FROM invoices WHERE id=? AND user_id=?");
+        $stmt->bind_param("ii", $id, $user_id);
         
         if ($stmt->execute()) {
             echo json_encode(["success" => true]);

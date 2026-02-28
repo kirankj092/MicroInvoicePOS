@@ -8,6 +8,7 @@ const db = new Database("invoices.db");
 db.exec(`
   CREATE TABLE IF NOT EXISTS invoices (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
     customer_name TEXT NOT NULL,
     item_name TEXT NOT NULL,
     price REAL NOT NULL,
@@ -80,9 +81,14 @@ app.all("/api.php", (req, res) => {
     const action = req.query.action;
     const method = req.method;
 
+    // Auth check for mock API
+    if (!mockSession.user_id) {
+        return res.status(401).json({ error: "Unauthorized" });
+    }
+
     try {
         if (action === 'read') {
-            const invoices = db.prepare("SELECT * FROM invoices ORDER BY created_at DESC").all();
+            const invoices = db.prepare("SELECT * FROM invoices WHERE user_id = ? ORDER BY created_at DESC").all(mockSession.user_id);
             return res.json(invoices);
         }
 
@@ -92,23 +98,23 @@ app.all("/api.php", (req, res) => {
             if (action === 'create') {
                 const { customer_name, item_name, price, quantity } = data;
                 const total = price * quantity;
-                const stmt = db.prepare("INSERT INTO invoices (customer_name, item_name, price, quantity, total) VALUES (?, ?, ?, ?, ?)");
-                const result = stmt.run(customer_name, item_name, price, quantity, total);
+                const stmt = db.prepare("INSERT INTO invoices (user_id, customer_name, item_name, price, quantity, total) VALUES (?, ?, ?, ?, ?, ?)");
+                const result = stmt.run(mockSession.user_id, customer_name, item_name, price, quantity, total);
                 return res.json({ success: true, id: result.lastInsertRowid });
             }
 
             if (action === 'update') {
                 const { id, customer_name, item_name, price, quantity } = data;
                 const total = price * quantity;
-                const stmt = db.prepare("UPDATE invoices SET customer_name=?, item_name=?, price=?, quantity=?, total=? WHERE id=?");
-                stmt.run(customer_name, item_name, price, quantity, total, id);
+                const stmt = db.prepare("UPDATE invoices SET customer_name=?, item_name=?, price=?, quantity=?, total=? WHERE id=? AND user_id=?");
+                stmt.run(customer_name, item_name, price, quantity, total, id, mockSession.user_id);
                 return res.json({ success: true });
             }
 
             if (action === 'delete') {
                 const { id } = data;
-                const stmt = db.prepare("DELETE FROM invoices WHERE id=?");
-                stmt.run(id);
+                const stmt = db.prepare("DELETE FROM invoices WHERE id=? AND user_id=?");
+                stmt.run(id, mockSession.user_id);
                 return res.json({ success: true });
             }
         }
