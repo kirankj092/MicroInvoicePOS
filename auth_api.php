@@ -1,4 +1,5 @@
 <?php
+ob_start();
 /**
  * auth_api.php - Secure Authentication Backend
  * Handles Login, Registration, and Session Management
@@ -32,14 +33,15 @@ $db_user = $username ?? $db_user ?? $user ?? '';
 $db_pass = $password ?? $db_pass ?? $pass ?? '';
 $db_name = $dbname ?? $db_name ?? '';
 
-$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
+// Suppress warnings to keep JSON valid
+$conn = @new mysqli($db_host, $db_user, $db_pass, $db_name);
 
 if ($conn->connect_error) {
-    http_response_code(500);
+    ob_clean();
     die(json_encode([
         "error" => "Database connection failed",
         "details" => $conn->connect_error,
-        "hint" => "Check your db_config.php variable names ($host, $username, $password, $dbname)"
+        "hint" => "Check your db_config.php variable names. Ensure you use \$host, \$username, \$password, and \$dbname."
     ]));
 }
 
