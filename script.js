@@ -4,6 +4,7 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
+    console.log("Micro Invoice POS Initializing...");
     const form = document.getElementById('invoiceForm');
     const itemsContainer = document.getElementById('itemsContainer');
     const addItemBtn = document.getElementById('addItemBtn');
@@ -236,9 +237,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const inv = directData || invoices.find(i => i.id == id);
         if (!inv) return;
 
+        const itemsText = inv.items ? inv.items.map(i => `${i.item_name} (x${i.quantity})`).join(', ') : 'No items';
         const shareData = {
             title: `Invoice #${inv.id}`,
-            text: `Invoice for ${inv.customer_name}\nItem: ${inv.item_name}\nTotal: $${parseFloat(inv.total).toFixed(2)}\nDate: ${new Date(inv.created_at).toLocaleDateString()}`,
+            text: `Invoice for ${inv.customer_name}\nItems: ${itemsText}\nTotal: $${parseFloat(inv.total).toFixed(2)}\nDate: ${new Date(inv.created_at).toLocaleDateString()}`,
             url: window.location.href
         };
 
@@ -303,6 +305,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Add Item Row
     const addItemRow = (data = null) => {
+        if (!itemsContainer) {
+            console.error("itemsContainer not found!");
+            return;
+        }
         const row = document.createElement('div');
         row.className = 'item-row';
         row.innerHTML = `
@@ -378,7 +384,11 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Event Listeners
-    addItemBtn.addEventListener('click', () => addItemRow());
+    if (addItemBtn) {
+        addItemBtn.addEventListener('click', () => addItemRow());
+    } else {
+        console.error("addItemBtn not found!");
+    }
 
     // Form Action Buttons
     const getFormData = () => {

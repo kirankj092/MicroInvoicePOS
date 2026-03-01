@@ -45,14 +45,14 @@ if ($conn->connect_error) {
     ]));
 }
 
+// Helper function to read JSON body from JavaScript fetch
+function getJsonInput() {
+    return json_decode(file_get_contents('php://input'), true);
+}
+
 // 4. Handle Actions
 try {
     $action = $_GET['action'] ?? '';
-
-    // Helper function to read JSON body from JavaScript fetch
-    function getJsonInput() {
-        return json_decode(file_get_contents('php://input'), true);
-    }
 
     switch ($action) {
     case 'read':
