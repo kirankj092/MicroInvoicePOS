@@ -67,6 +67,27 @@ if ($conn->connect_error) {
                     echo "   ALTER TABLE invoices ADD COLUMN user_id INT NOT NULL AFTER id;\n";
                 }
             }
+
+            if ($table === 'users') {
+                $columns = $conn->query("SHOW COLUMNS FROM users");
+                $cols = [];
+                $has_shop_name = false;
+                while($col = $columns->fetch_assoc()) {
+                    $cols[] = $col['Field'];
+                    if ($col['Field'] === 'shop_name') $has_shop_name = true;
+                }
+                echo "   Columns: " . implode(", ", $cols) . "\n";
+                
+                if (!$has_shop_name) {
+                    echo "   --- MIGRATION SQL for Profile ---\n";
+                    echo "   ALTER TABLE users ADD COLUMN shop_name VARCHAR(255) AFTER email;\n";
+                    echo "   ALTER TABLE users ADD COLUMN address TEXT AFTER shop_name;\n";
+                    echo "   ALTER TABLE users ADD COLUMN phone VARCHAR(20) AFTER address;\n";
+                    echo "   ALTER TABLE users ADD COLUMN gstin VARCHAR(20) AFTER phone;\n";
+                    echo "   ALTER TABLE users ADD COLUMN shop_logo LONGTEXT AFTER gstin;\n";
+                    echo "   ALTER TABLE users ADD COLUMN signature LONGTEXT AFTER shop_logo;\n";
+                }
+            }
         } else {
             echo "❌ Table '$table' MISSING!\n";
             echo "   Run the following SQL in your Hostinger phpMyAdmin:\n\n";

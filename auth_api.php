@@ -115,10 +115,66 @@ try {
 
     case 'check':
         if (isset($_SESSION['user_id'])) {
-            echo json_encode(["authenticated" => true, "username" => $_SESSION['username']]);
+            $user_id = $_SESSION['user_id'];
+            $stmt = $conn->prepare("SELECT username, email, shop_name, address, phone, gstin, shop_logo, signature FROM users WHERE id = ?");
+            $stmt->bind_param("i", $user_id);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $user_data = $result->fetch_assoc();
+            
+            echo json_encode([
+                "authenticated" => true, 
+                "username" => $user_data['username'],
+                "profile" => $user_data
+            ]);
+            $stmt->close();
         } else {
             echo json_encode(["authenticated" => false]);
         }
+        break;
+
+    case 'update_profile':
+        if (!isset($_SESSION['user_id'])) {
+            echo json_encode(["error" => "Unauthorized"]);
+            break;
+        }
+        $data = getJsonInput();
+        $user_id = $_SESSION['user_id'];
+        $shop_name = $data['shop_name'] ?? '';
+        $address = $data['address'] ?? '';
+        $phone = $data['phone'] ?? '';
+        $gstin = $data['gstin'] ?? '';
+        $shop_logo = $data['shop_logo'] ?? null;
+        $signature = $data['signature'] ?? null;
+
+        $sql = "UPDATE users SET shop_name=?, address=?, phone=?, gstin=?";
+        $params = [$shop_name, $address, $phone, $gstin];
+        $types = "ssss";
+
+        if ($shop_logo !== null) {
+            $sql .= ", shop_logo=?";
+            $params[] = $shop_logo;
+            $types .= "s";
+        }
+        if ($signature !== null) {
+            $sql .= ", signature=?";
+            $params[] = $signature;
+            $types .= "s";
+        }
+
+        $sql .= " WHERE id=?";
+        $params[] = $user_id;
+        $types .= "i";
+
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param($types, ...$params);
+
+        if ($stmt->execute()) {
+            echo json_encode(["success" => true, "message" => "Profile updated successfully."]);
+        } else {
+            echo json_encode(["error" => "Failed to update profile: " . $stmt->error]);
+        }
+        $stmt->close();
         break;
 
     case 'logout':

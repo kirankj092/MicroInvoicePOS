@@ -16,24 +16,138 @@ document.addEventListener('DOMContentLoaded', () => {
     const formPreviewBtn = document.getElementById('formPreviewBtn');
     const formDownloadBtn = document.getElementById('formDownloadBtn');
     const formShareBtn = document.getElementById('formShareBtn');
-    const userNameDisplay = document.getElementById('userNameDisplay');
+    const shopNameDisplay = document.getElementById('shopNameDisplay');
+    const shopTagline = document.getElementById('shopTagline');
+    const footerShopName = document.getElementById('footerShopName');
     const logoutBtn = document.getElementById('logoutBtn');
-    if (logoutBtn) console.log("Logout button initialized");
+    const profileBtn = document.getElementById('profileBtn');
+    const profileModal = document.getElementById('profileModal');
+    const closeProfileModal = document.getElementById('closeProfileModal');
+    const profileForm = document.getElementById('profileForm');
+    const shopLogoHeader = document.getElementById('shopLogoHeader');
+    const headerLogoImg = document.getElementById('headerLogoImg');
+    const defaultIconBox = document.getElementById('defaultIconBox');
 
     let editingId = null;
+    let userProfile = null;
 
-    // Fetch User Info
+    // Fetch User Info & Profile
     const fetchUserInfo = async () => {
         try {
             const response = await fetch('auth_api.php?action=check');
             const data = await response.json();
             if (data.authenticated) {
-                userNameDisplay.textContent = `Welcome, ${data.username}`;
+                userProfile = data.profile;
+                updateUIWithProfile(userProfile);
             }
         } catch (error) {
             console.log("Auth check skipped in preview");
         }
     };
+
+    const updateUIWithProfile = (profile) => {
+        if (!profile) return;
+        
+        const name = profile.shop_name || "Micro Invoice POS";
+        shopNameDisplay.textContent = name;
+        footerShopName.textContent = name;
+        
+        if (profile.shop_logo) {
+            headerLogoImg.src = profile.shop_logo;
+            shopLogoHeader.style.display = 'block';
+            defaultIconBox.style.display = 'none';
+            shopTagline.style.display = 'none';
+        } else {
+            shopLogoHeader.style.display = 'none';
+            defaultIconBox.style.display = 'flex';
+            shopTagline.style.display = 'block';
+        }
+    };
+
+    // Profile Modal Logic
+    if (profileBtn) {
+        profileBtn.addEventListener('click', () => {
+            if (userProfile) {
+                document.getElementById('shopName').value = userProfile.shop_name || '';
+                document.getElementById('shopAddress').value = userProfile.address || '';
+                document.getElementById('shopPhone').value = userProfile.phone || '';
+                document.getElementById('shopGstin').value = userProfile.gstin || '';
+                document.getElementById('shopEmail').value = userProfile.email || '';
+                
+                if (userProfile.shop_logo) {
+                    document.getElementById('logoPreview').innerHTML = `<img src="${userProfile.shop_logo}" alt="Logo">`;
+                }
+                if (userProfile.signature) {
+                    document.getElementById('signaturePreview').innerHTML = `<img src="${userProfile.signature}" alt="Signature">`;
+                }
+            }
+            profileModal.style.display = 'block';
+        });
+    }
+
+    if (closeProfileModal) {
+        closeProfileModal.addEventListener('click', () => {
+            profileModal.style.display = 'none';
+        });
+    }
+
+    window.addEventListener('click', (e) => {
+        if (e.target === profileModal) profileModal.style.display = 'none';
+    });
+
+    // Handle Image Previews & Base64 Conversion
+    const handleImageUpload = (input, previewId) => {
+        input.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    document.getElementById(previewId).innerHTML = `<img src="${event.target.result}" alt="Preview">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    };
+
+    handleImageUpload(document.getElementById('shopLogoInput'), 'logoPreview');
+    handleImageUpload(document.getElementById('signatureInput'), 'signaturePreview');
+
+    // Save Profile
+    if (profileForm) {
+        profileForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const logoImg = document.getElementById('logoPreview').querySelector('img');
+            const signatureImg = document.getElementById('signaturePreview').querySelector('img');
+            
+            const data = {
+                shop_name: document.getElementById('shopName').value,
+                address: document.getElementById('shopAddress').value,
+                phone: document.getElementById('shopPhone').value,
+                gstin: document.getElementById('shopGstin').value,
+                email: document.getElementById('shopEmail').value,
+                shop_logo: logoImg ? logoImg.src : null,
+                signature: signatureImg ? signatureImg.src : null
+            };
+
+            try {
+                const response = await fetch('auth_api.php?action=update_profile', {
+                    method: 'POST',
+                    body: JSON.stringify(data),
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const result = await response.json();
+                if (result.success) {
+                    showStatus('Profile updated!', 'success');
+                    profileModal.style.display = 'none';
+                    fetchUserInfo();
+                } else {
+                    showStatus('Error: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showStatus('Error saving profile', 'error');
+            }
+        });
+    }
 
     // Logout Logic
     if (logoutBtn) {
@@ -159,6 +273,36 @@ document.addEventListener('DOMContentLoaded', () => {
     // PNG Generation Logic
     const generateInvoiceCanvas = async (invoice) => {
         const tpl = document.getElementById('invoiceTemplate');
+        
+        // Populate Shop Info
+        const shopName = userProfile?.shop_name || "Micro Invoice";
+        document.getElementById('tpl-shop-name').textContent = shopName;
+        document.getElementById('tpl-shop-address').textContent = userProfile?.address || "";
+        document.getElementById('tpl-shop-contact').textContent = 
+            (userProfile?.phone ? `Phone: ${userProfile.phone}` : "") + 
+            (userProfile?.email ? ` | Email: ${userProfile.email}` : "");
+        document.getElementById('tpl-shop-gstin').textContent = userProfile?.gstin ? `GSTIN: ${userProfile.gstin}` : "";
+
+        // Handle Logo
+        const tplLogoContainer = document.getElementById('tpl-logo-container');
+        const tplLogo = document.getElementById('tpl-logo');
+        if (userProfile?.shop_logo) {
+            tplLogo.src = userProfile.shop_logo;
+            tplLogoContainer.style.display = 'block';
+        } else {
+            tplLogoContainer.style.display = 'none';
+        }
+
+        // Handle Signature
+        const tplSigContainer = document.getElementById('tpl-signature-container');
+        const tplSig = document.getElementById('tpl-signature');
+        if (userProfile?.signature) {
+            tplSig.src = userProfile.signature;
+            tplSigContainer.style.display = 'block';
+        } else {
+            tplSigContainer.style.display = 'none';
+        }
+
         document.getElementById('tpl-id').textContent = invoice.id;
         document.getElementById('tpl-date').textContent = new Date(invoice.created_at).toLocaleDateString();
         document.getElementById('tpl-customer').textContent = invoice.customer_name;
