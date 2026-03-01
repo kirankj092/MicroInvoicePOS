@@ -258,7 +258,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td style="font-weight: 500;">${inv.customer_name}</td>
                 <td>${itemsSummary}</td>
                 <td class="text-right text-bold" style="color: #1e4e8c;">₹${parseFloat(inv.total).toFixed(2)}</td>
-                <td class="text-right">
+                <td class="text-right action-cell">
                     <button class="btn-icon preview-btn" data-id="${inv.id}" title="Preview PNG">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
                     </button>
