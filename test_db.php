@@ -94,9 +94,14 @@ if ($conn->connect_error) {
                 echo "    item_name VARCHAR(255) NOT NULL,\n";
                 echo "    price DECIMAL(10,2) NOT NULL,\n";
                 echo "    quantity INT NOT NULL,\n";
+                echo "    discount DECIMAL(10,2) DEFAULT 0,\n";
+                echo "    gst_rate INT DEFAULT 0,\n";
                 echo "    subtotal DECIMAL(10,2) NOT NULL,\n";
                 echo "    FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON DELETE CASCADE\n";
                 echo ");\n\n";
+                echo "--- MIGRATION SQL (If table already exists) ---\n";
+                echo "ALTER TABLE invoice_items ADD COLUMN discount DECIMAL(10,2) DEFAULT 0 AFTER quantity;\n";
+                echo "ALTER TABLE invoice_items ADD COLUMN gst_rate INT DEFAULT 0 AFTER discount;\n";
             }
         }
     }

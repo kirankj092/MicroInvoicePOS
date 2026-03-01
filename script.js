@@ -116,7 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td style="font-family: monospace; color: #64748b;">${date}</td>
                 <td style="font-weight: 500;">${inv.customer_name}</td>
                 <td>${itemsSummary}</td>
-                <td class="text-right text-bold" style="color: #1e4e8c;">$${parseFloat(inv.total).toFixed(2)}</td>
+                <td class="text-right text-bold" style="color: #1e4e8c;">₹${parseFloat(inv.total).toFixed(2)}</td>
                 <td class="text-right">
                     <button class="btn-icon preview-btn" data-id="${inv.id}" title="Preview PNG">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -173,14 +173,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 tr.innerHTML = `
                     <td style="padding: 15px 12px; font-size: 14px;">${item.item_name}</td>
                     <td style="padding: 15px 12px; text-align: center; font-size: 14px;">${item.quantity}</td>
-                    <td style="padding: 15px 12px; text-align: right; font-size: 14px;">$${parseFloat(item.price).toFixed(2)}</td>
-                    <td style="padding: 15px 12px; text-align: right; font-size: 14px; font-weight: 600;">$${parseFloat(item.subtotal).toFixed(2)}</td>
+                    <td style="padding: 15px 12px; text-align: right; font-size: 14px;">₹${parseFloat(item.price).toFixed(2)}</td>
+                    <td style="padding: 15px 12px; text-align: right; font-size: 14px;">₹${parseFloat(item.discount || 0).toFixed(2)}</td>
+                    <td style="padding: 15px 12px; text-align: right; font-size: 14px;">${item.gst_rate}%</td>
+                    <td style="padding: 15px 12px; text-align: right; font-size: 14px; font-weight: 600;">₹${parseFloat(item.subtotal).toFixed(2)}</td>
                 `;
                 itemsBody.appendChild(tr);
             });
         }
 
-        document.getElementById('tpl-grand-total').textContent = `$${parseFloat(invoice.total).toFixed(2)}`;
+        document.getElementById('tpl-grand-total').textContent = `₹${parseFloat(invoice.total).toFixed(2)}`;
 
         return await html2canvas(tpl, {
             scale: 2,
@@ -309,40 +311,86 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error("itemsContainer not found!");
             return;
         }
+
+        // Collapse all existing rows
+        document.querySelectorAll('.item-row').forEach(r => r.classList.add('collapsed'));
+
         const row = document.createElement('div');
         row.className = 'item-row';
         row.innerHTML = `
             <div class="row-header">
-                <span style="font-size: 0.7rem; font-weight: 600; color: #94a3b8;">ITEM #${itemsContainer.children.length + 1}</span>
-                <button type="button" class="btn-remove-item" title="Remove Item">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-                </button>
-            </div>
-            <div class="input-group">
-                <input type="text" class="item-name" required placeholder="Item Name" value="${data ? data.item_name : ''}">
-            </div>
-            <div class="input-row">
-                <div class="input-group">
-                    <input type="number" class="item-price" step="0.01" required placeholder="Price" value="${data ? data.price : ''}">
+                <div class="row-title">
+                    <svg class="chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                    <span>ITEM #${itemsContainer.children.length + 1}</span>
+                    <span class="item-summary-text" style="font-weight: 400; color: #64748b; margin-left: 10px;"></span>
                 </div>
-                <div class="input-group">
-                    <input type="number" class="item-qty" required placeholder="Qty" value="${data ? data.quantity : '1'}">
+                <div class="row-actions">
+                    <button type="button" class="btn-remove-item" title="Remove Item">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                    </button>
                 </div>
             </div>
-            <div class="subtotal-display">$0.00</div>
+            <div class="row-content">
+                <div class="input-group" style="margin-bottom: 0.75rem;">
+                    <input type="text" class="item-name" required placeholder="Item Name" value="${data ? data.item_name : ''}">
+                </div>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label style="font-size: 0.65rem; margin-bottom: 2px;">Price</label>
+                        <input type="number" class="item-price" step="0.01" required placeholder="Price" value="${data ? data.price : ''}">
+                    </div>
+                    <div class="input-group">
+                        <label style="font-size: 0.65rem; margin-bottom: 2px;">Qty</label>
+                        <input type="number" class="item-qty" required placeholder="Qty" value="${data ? data.quantity : '1'}">
+                    </div>
+                </div>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label style="font-size: 0.65rem; margin-bottom: 2px;">Discount (₹)</label>
+                        <input type="number" class="item-discount" step="0.01" placeholder="Discount" value="${data ? (data.discount || 0) : '0'}">
+                    </div>
+                    <div class="input-group">
+                        <label style="font-size: 0.65rem; margin-bottom: 2px;">GST (%)</label>
+                        <select class="item-gst">
+                            <option value="0" ${data && data.gst_rate == 0 ? 'selected' : ''}>0%</option>
+                            <option value="5" ${data && data.gst_rate == 5 ? 'selected' : ''}>5%</option>
+                            <option value="12" ${data && data.gst_rate == 12 ? 'selected' : ''}>12%</option>
+                            <option value="18" ${data && data.gst_rate == 18 ? 'selected' : ''}>18%</option>
+                            <option value="28" ${data && data.gst_rate == 28 ? 'selected' : ''}>28%</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="subtotal-display">₹0.00</div>
+            </div>
         `;
+
+        const header = row.querySelector('.row-header');
+        header.addEventListener('click', (e) => {
+            if (e.target.closest('.btn-remove-item')) return;
+            const isCollapsed = row.classList.contains('collapsed');
+            if (isCollapsed) {
+                document.querySelectorAll('.item-row').forEach(r => r.classList.add('collapsed'));
+                row.classList.remove('collapsed');
+            } else {
+                row.classList.add('collapsed');
+            }
+        });
 
         const removeBtn = row.querySelector('.btn-remove-item');
         removeBtn.addEventListener('click', () => {
             if (itemsContainer.children.length > 1) {
                 row.remove();
                 updateTotal();
+                // Update numbering
+                document.querySelectorAll('.item-row').forEach((r, idx) => {
+                    r.querySelector('.row-title span').textContent = `ITEM #${idx + 1}`;
+                });
             } else {
                 showStatus('Invoice must have at least one item.', 'error');
             }
         });
 
-        const inputs = row.querySelectorAll('input');
+        const inputs = row.querySelectorAll('input, select');
         inputs.forEach(input => {
             input.addEventListener('input', () => {
                 updateRowSubtotal(row);
@@ -356,10 +404,20 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const updateRowSubtotal = (row) => {
+        const name = row.querySelector('.item-name').value;
         const price = parseFloat(row.querySelector('.item-price').value) || 0;
         const qty = parseInt(row.querySelector('.item-qty').value) || 0;
-        const subtotal = price * qty;
-        row.querySelector('.subtotal-display').textContent = `$${subtotal.toFixed(2)}`;
+        const discount = parseFloat(row.querySelector('.item-discount').value) || 0;
+        const gstRate = parseInt(row.querySelector('.item-gst').value) || 0;
+
+        // Subtotal = (Price * Qty - Discount) * (1 + GST/100)
+        const baseAmount = (price * qty) - discount;
+        const gstAmount = baseAmount * (gstRate / 100);
+        const subtotal = baseAmount + gstAmount;
+
+        row.querySelector('.subtotal-display').textContent = `₹${subtotal.toFixed(2)}`;
+        row.querySelector('.item-summary-text').textContent = name ? `- ${name}` : '';
+        
         return subtotal;
     };
 
@@ -369,7 +427,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.item-row').forEach(row => {
             grandTotal += updateRowSubtotal(row);
         });
-        totalDisplay.textContent = `$${grandTotal.toFixed(2)}`;
+        totalDisplay.textContent = `₹${grandTotal.toFixed(2)}`;
     };
 
     // Show Status Message
@@ -397,11 +455,19 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.item-row').forEach(row => {
             const price = parseFloat(row.querySelector('.item-price').value) || 0;
             const qty = parseInt(row.querySelector('.item-qty').value) || 0;
-            const subtotal = price * qty;
+            const discount = parseFloat(row.querySelector('.item-discount').value) || 0;
+            const gstRate = parseInt(row.querySelector('.item-gst').value) || 0;
+            
+            const baseAmount = (price * qty) - discount;
+            const gstAmount = baseAmount * (gstRate / 100);
+            const subtotal = baseAmount + gstAmount;
+
             items.push({
                 item_name: row.querySelector('.item-name').value || 'Item Name',
                 price: price,
                 quantity: qty,
+                discount: discount,
+                gst_rate: gstRate,
                 subtotal: subtotal
             });
             grandTotal += subtotal;

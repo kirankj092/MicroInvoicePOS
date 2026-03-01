@@ -106,13 +106,15 @@ try {
             $invoice_id = $stmt->insert_id;
             $stmt->close();
 
-            $item_stmt = $conn->prepare("INSERT INTO invoice_items (invoice_id, item_name, price, quantity, subtotal) VALUES (?, ?, ?, ?, ?)");
+            $item_stmt = $conn->prepare("INSERT INTO invoice_items (invoice_id, item_name, price, quantity, discount, gst_rate, subtotal) VALUES (?, ?, ?, ?, ?, ?, ?)");
             foreach ($items as $item) {
                 $item_name = $item['item_name'];
                 $price = $item['price'];
                 $quantity = $item['quantity'];
+                $discount = $item['discount'] ?? 0;
+                $gst_rate = $item['gst_rate'] ?? 0;
                 $subtotal = $item['subtotal'];
-                $item_stmt->bind_param("isdid", $invoice_id, $item_name, $price, $quantity, $subtotal);
+                $item_stmt->bind_param("isdidid", $invoice_id, $item_name, $price, $quantity, $discount, $gst_rate, $subtotal);
                 $item_stmt->execute();
             }
             $item_stmt->close();
@@ -150,13 +152,15 @@ try {
             $del_stmt->close();
 
             // Insert new items
-            $item_stmt = $conn->prepare("INSERT INTO invoice_items (invoice_id, item_name, price, quantity, subtotal) VALUES (?, ?, ?, ?, ?)");
+            $item_stmt = $conn->prepare("INSERT INTO invoice_items (invoice_id, item_name, price, quantity, discount, gst_rate, subtotal) VALUES (?, ?, ?, ?, ?, ?, ?)");
             foreach ($items as $item) {
                 $item_name = $item['item_name'];
                 $price = $item['price'];
                 $quantity = $item['quantity'];
+                $discount = $item['discount'] ?? 0;
+                $gst_rate = $item['gst_rate'] ?? 0;
                 $subtotal = $item['subtotal'];
-                $item_stmt->bind_param("isdid", $id, $item_name, $price, $quantity, $subtotal);
+                $item_stmt->bind_param("isdidid", $id, $item_name, $price, $quantity, $discount, $gst_rate, $subtotal);
                 $item_stmt->execute();
             }
             $item_stmt->close();
