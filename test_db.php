@@ -44,7 +44,7 @@ if ($conn->connect_error) {
     echo "CONNECTION SUCCESSFUL!\n\n";
     
     echo "--- Table Check ---\n";
-    $tables = ['users', 'invoices'];
+    $tables = ['users', 'invoices', 'invoice_items'];
     foreach ($tables as $table) {
         $result = $conn->query("SHOW TABLES LIKE '$table'");
         if ($result->num_rows > 0) {
@@ -78,17 +78,24 @@ if ($conn->connect_error) {
                 echo "    password VARCHAR(255) NOT NULL,\n";
                 echo "    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n";
                 echo ");\n\n";
-            } else {
+            } elseif ($table === 'invoices') {
                 echo "CREATE TABLE invoices (\n";
                 echo "    id INT AUTO_INCREMENT PRIMARY KEY,\n";
                 echo "    user_id INT NOT NULL,\n";
                 echo "    customer_name VARCHAR(100),\n";
-                echo "    item_name VARCHAR(100),\n";
-                echo "    price DECIMAL(10,2),\n";
-                echo "    quantity INT,\n";
                 echo "    total DECIMAL(10,2),\n";
                 echo "    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,\n";
                 echo "    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE\n";
+                echo ");\n\n";
+            } else {
+                echo "CREATE TABLE invoice_items (\n";
+                echo "    id INT AUTO_INCREMENT PRIMARY KEY,\n";
+                echo "    invoice_id INT NOT NULL,\n";
+                echo "    item_name VARCHAR(255) NOT NULL,\n";
+                echo "    price DECIMAL(10,2) NOT NULL,\n";
+                echo "    quantity INT NOT NULL,\n";
+                echo "    subtotal DECIMAL(10,2) NOT NULL,\n";
+                echo "    FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON DELETE CASCADE\n";
                 echo ");\n\n";
             }
         }

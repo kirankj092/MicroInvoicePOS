@@ -68,7 +68,19 @@ try {
         $invoices = [];
         if ($result) {
             while ($row = $result->fetch_assoc()) {
+                // Fetch items for this invoice
+                $invoice_id = $row['id'];
+                $item_stmt = $conn->prepare("SELECT * FROM invoice_items WHERE invoice_id = ?");
+                $item_stmt->bind_param("i", $invoice_id);
+                $item_stmt->execute();
+                $item_result = $item_stmt->get_result();
+                $items = [];
+                while ($item_row = $item_result->fetch_assoc()) {
+                    $items[] = $item_row;
+                }
+                $row['items'] = $items;
                 $invoices[] = $row;
+                $item_stmt->close();
             }
         }
         echo json_encode($invoices);
@@ -81,24 +93,36 @@ try {
         
         $user_id = $_SESSION['user_id'];
         $customer = $data['customer_name'] ?? '';
-        $item = $data['item_name'] ?? '';
-        $price = $data['price'] ?? 0;
-        $quantity = $data['quantity'] ?? 0;
-        $total = $price * $quantity;
+        $items = $data['items'] ?? [];
+        $total = $data['total'] ?? 0;
 
-        $stmt = $conn->prepare("INSERT INTO invoices (user_id, customer_name, item_name, price, quantity, total) VALUES (?, ?, ?, ?, ?, ?)");
-        if (!$stmt) {
-            echo json_encode(["error" => "SQL Error: " . $conn->error]);
-            break;
+        // Start transaction
+        $conn->begin_transaction();
+
+        try {
+            $stmt = $conn->prepare("INSERT INTO invoices (user_id, customer_name, total) VALUES (?, ?, ?)");
+            $stmt->bind_param("isd", $user_id, $customer, $total);
+            $stmt->execute();
+            $invoice_id = $stmt->insert_id;
+            $stmt->close();
+
+            $item_stmt = $conn->prepare("INSERT INTO invoice_items (invoice_id, item_name, price, quantity, subtotal) VALUES (?, ?, ?, ?, ?)");
+            foreach ($items as $item) {
+                $item_name = $item['item_name'];
+                $price = $item['price'];
+                $quantity = $item['quantity'];
+                $subtotal = $item['subtotal'];
+                $item_stmt->bind_param("isdid", $invoice_id, $item_name, $price, $quantity, $subtotal);
+                $item_stmt->execute();
+            }
+            $item_stmt->close();
+
+            $conn->commit();
+            echo json_encode(["success" => true, "id" => $invoice_id]);
+        } catch (Exception $e) {
+            $conn->rollback();
+            echo json_encode(["error" => "Transaction failed: " . $e->getMessage()]);
         }
-        $stmt->bind_param("issdid", $user_id, $customer, $item, $price, $quantity, $total);
-        
-        if ($stmt->execute()) {
-            echo json_encode(["success" => true, "id" => $stmt->insert_id]);
-        } else {
-            echo json_encode(["error" => $stmt->error]);
-        }
-        $stmt->close();
         break;
 
     case 'update':
@@ -108,24 +132,41 @@ try {
         $user_id = $_SESSION['user_id'];
         $id = $data['id'] ?? 0;
         $customer = $data['customer_name'] ?? '';
-        $item = $data['item_name'] ?? '';
-        $price = $data['price'] ?? 0;
-        $quantity = $data['quantity'] ?? 0;
-        $total = $price * $quantity;
+        $items = $data['items'] ?? [];
+        $total = $data['total'] ?? 0;
 
-        $stmt = $conn->prepare("UPDATE invoices SET customer_name=?, item_name=?, price=?, quantity=?, total=? WHERE id=? AND user_id=?");
-        if (!$stmt) {
-            echo json_encode(["error" => "SQL Error: " . $conn->error]);
-            break;
-        }
-        $stmt->bind_param("ssdidii", $customer, $item, $price, $quantity, $total, $id, $user_id);
-        
-        if ($stmt->execute()) {
+        $conn->begin_transaction();
+
+        try {
+            $stmt = $conn->prepare("UPDATE invoices SET customer_name=?, total=? WHERE id=? AND user_id=?");
+            $stmt->bind_param("sdii", $customer, $total, $id, $user_id);
+            $stmt->execute();
+            $stmt->close();
+
+            // Delete old items
+            $del_stmt = $conn->prepare("DELETE FROM invoice_items WHERE invoice_id = ?");
+            $del_stmt->bind_param("i", $id);
+            $del_stmt->execute();
+            $del_stmt->close();
+
+            // Insert new items
+            $item_stmt = $conn->prepare("INSERT INTO invoice_items (invoice_id, item_name, price, quantity, subtotal) VALUES (?, ?, ?, ?, ?)");
+            foreach ($items as $item) {
+                $item_name = $item['item_name'];
+                $price = $item['price'];
+                $quantity = $item['quantity'];
+                $subtotal = $item['subtotal'];
+                $item_stmt->bind_param("isdid", $id, $item_name, $price, $quantity, $subtotal);
+                $item_stmt->execute();
+            }
+            $item_stmt->close();
+
+            $conn->commit();
             echo json_encode(["success" => true]);
-        } else {
-            echo json_encode(["error" => $stmt->error]);
+        } catch (Exception $e) {
+            $conn->rollback();
+            echo json_encode(["error" => "Transaction failed: " . $e->getMessage()]);
         }
-        $stmt->close();
         break;
 
     case 'delete':

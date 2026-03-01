@@ -60,28 +60,16 @@
                             <input type="text" id="customerName" required placeholder="e.g. John Doe">
                         </div>
 
-                        <div class="input-group">
-                            <label for="itemName">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
-                                Item Name
-                            </label>
-                            <input type="text" id="itemName" required placeholder="e.g. Wireless Mouse">
-                        </div>
-
-                        <div class="input-row">
-                            <div class="input-group">
-                                <label for="price">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                                    Price
-                                </label>
-                                <input type="number" id="price" step="0.01" required placeholder="0.00">
+                        <div class="items-section">
+                            <div class="section-header">
+                                <label>Invoice Items</label>
+                                <button type="button" id="addItemBtn" class="btn-add-item">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                                    Add Item
+                                </button>
                             </div>
-                            <div class="input-group">
-                                <label for="quantity">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="9" y2="9"/><line x1="4" x2="20" y1="15" y2="15"/><line x1="10" x2="8" y1="3" y2="21"/><line x1="16" x2="14" y1="3" y2="21"/></svg>
-                                    Quantity
-                                </label>
-                                <input type="number" id="quantity" required placeholder="1">
+                            <div id="itemsContainer" class="items-container">
+                                <!-- Line items will be added here -->
                             </div>
                         </div>
 
@@ -172,13 +160,8 @@
                         <th style="padding: 12px; text-align: right; font-size: 12px; text-transform: uppercase; color: #64748b;">Total</th>
                     </tr>
                 </thead>
-                <tbody>
-                    <tr style="border-bottom: 1px solid #f1f5f9;">
-                        <td style="padding: 15px 12px; font-size: 14px;" id="tpl-item"></td>
-                        <td style="padding: 15px 12px; text-align: center; font-size: 14px;" id="tpl-qty"></td>
-                        <td style="padding: 15px 12px; text-align: right; font-size: 14px;" id="tpl-price"></td>
-                        <td style="padding: 15px 12px; text-align: right; font-size: 14px; font-weight: 600;" id="tpl-total"></td>
-                    </tr>
+                <tbody id="tpl-items-body">
+                    <!-- Items will be injected here -->
                 </tbody>
             </table>
             

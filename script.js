@@ -5,8 +5,8 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('invoiceForm');
-    const priceInput = document.getElementById('price');
-    const quantityInput = document.getElementById('quantity');
+    const itemsContainer = document.getElementById('itemsContainer');
+    const addItemBtn = document.getElementById('addItemBtn');
     const totalDisplay = document.getElementById('totalDisplay');
     const invoiceList = document.getElementById('invoiceList');
     const emptyState = document.getElementById('emptyState');
@@ -107,10 +107,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const row = document.createElement('tr');
             const date = new Date(inv.created_at).toLocaleDateString();
             
+            const itemsSummary = inv.items && inv.items.length > 0 
+                ? (inv.items.length === 1 ? inv.items[0].item_name : `${inv.items[0].item_name} (+${inv.items.length - 1} more)`)
+                : 'No items';
+
             row.innerHTML = `
                 <td style="font-family: monospace; color: #64748b;">${date}</td>
                 <td style="font-weight: 500;">${inv.customer_name}</td>
-                <td>${inv.item_name} <span style="color: #94a3b8; font-size: 0.75rem;">x${inv.quantity}</span></td>
+                <td>${itemsSummary}</td>
                 <td class="text-right text-bold" style="color: #1e4e8c;">$${parseFloat(inv.total).toFixed(2)}</td>
                 <td class="text-right">
                     <button class="btn-icon preview-btn" data-id="${inv.id}" title="Preview PNG">
@@ -157,10 +161,24 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('tpl-id').textContent = invoice.id;
         document.getElementById('tpl-date').textContent = new Date(invoice.created_at).toLocaleDateString();
         document.getElementById('tpl-customer').textContent = invoice.customer_name;
-        document.getElementById('tpl-item').textContent = invoice.item_name;
-        document.getElementById('tpl-qty').textContent = invoice.quantity;
-        document.getElementById('tpl-price').textContent = `$${parseFloat(invoice.price).toFixed(2)}`;
-        document.getElementById('tpl-total').textContent = `$${parseFloat(invoice.total).toFixed(2)}`;
+        
+        const itemsBody = document.getElementById('tpl-items-body');
+        itemsBody.innerHTML = '';
+        
+        if (invoice.items) {
+            invoice.items.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.style.borderBottom = '1px solid #f1f5f9';
+                tr.innerHTML = `
+                    <td style="padding: 15px 12px; font-size: 14px;">${item.item_name}</td>
+                    <td style="padding: 15px 12px; text-align: center; font-size: 14px;">${item.quantity}</td>
+                    <td style="padding: 15px 12px; text-align: right; font-size: 14px;">$${parseFloat(item.price).toFixed(2)}</td>
+                    <td style="padding: 15px 12px; text-align: right; font-size: 14px; font-weight: 600;">$${parseFloat(item.subtotal).toFixed(2)}</td>
+                `;
+                itemsBody.appendChild(tr);
+            });
+        }
+
         document.getElementById('tpl-grand-total').textContent = `$${parseFloat(invoice.total).toFixed(2)}`;
 
         return await html2canvas(tpl, {
@@ -246,9 +264,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         editingId = id;
         document.getElementById('customerName').value = inv.customer_name;
-        document.getElementById('itemName').value = inv.item_name;
-        priceInput.value = inv.price;
-        quantityInput.value = inv.quantity;
+        
+        // Clear and refill items
+        itemsContainer.innerHTML = '';
+        if (inv.items && inv.items.length > 0) {
+            inv.items.forEach(item => addItemRow(item));
+        } else {
+            addItemRow();
+        }
         
         updateTotal();
         saveBtn.innerHTML = `
@@ -278,12 +301,69 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // Add Item Row
+    const addItemRow = (data = null) => {
+        const row = document.createElement('div');
+        row.className = 'item-row';
+        row.innerHTML = `
+            <div class="row-header">
+                <span style="font-size: 0.7rem; font-weight: 600; color: #94a3b8;">ITEM #${itemsContainer.children.length + 1}</span>
+                <button type="button" class="btn-remove-item" title="Remove Item">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                </button>
+            </div>
+            <div class="input-group">
+                <input type="text" class="item-name" required placeholder="Item Name" value="${data ? data.item_name : ''}">
+            </div>
+            <div class="input-row">
+                <div class="input-group">
+                    <input type="number" class="item-price" step="0.01" required placeholder="Price" value="${data ? data.price : ''}">
+                </div>
+                <div class="input-group">
+                    <input type="number" class="item-qty" required placeholder="Qty" value="${data ? data.quantity : '1'}">
+                </div>
+            </div>
+            <div class="subtotal-display">$0.00</div>
+        `;
+
+        const removeBtn = row.querySelector('.btn-remove-item');
+        removeBtn.addEventListener('click', () => {
+            if (itemsContainer.children.length > 1) {
+                row.remove();
+                updateTotal();
+            } else {
+                showStatus('Invoice must have at least one item.', 'error');
+            }
+        });
+
+        const inputs = row.querySelectorAll('input');
+        inputs.forEach(input => {
+            input.addEventListener('input', () => {
+                updateRowSubtotal(row);
+                updateTotal();
+            });
+        });
+
+        itemsContainer.appendChild(row);
+        updateRowSubtotal(row);
+        updateTotal();
+    };
+
+    const updateRowSubtotal = (row) => {
+        const price = parseFloat(row.querySelector('.item-price').value) || 0;
+        const qty = parseInt(row.querySelector('.item-qty').value) || 0;
+        const subtotal = price * qty;
+        row.querySelector('.subtotal-display').textContent = `$${subtotal.toFixed(2)}`;
+        return subtotal;
+    };
+
     // Update Total Display
     const updateTotal = () => {
-        const price = parseFloat(priceInput.value) || 0;
-        const quantity = parseInt(quantityInput.value) || 0;
-        const total = price * quantity;
-        totalDisplay.textContent = `$${total.toFixed(2)}`;
+        let grandTotal = 0;
+        document.querySelectorAll('.item-row').forEach(row => {
+            grandTotal += updateRowSubtotal(row);
+        });
+        totalDisplay.textContent = `$${grandTotal.toFixed(2)}`;
     };
 
     // Show Status Message
@@ -298,18 +378,30 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Event Listeners
-    priceInput.addEventListener('input', updateTotal);
-    quantityInput.addEventListener('input', updateTotal);
+    addItemBtn.addEventListener('click', () => addItemRow());
 
     // Form Action Buttons
     const getFormData = () => {
+        const items = [];
+        let grandTotal = 0;
+        document.querySelectorAll('.item-row').forEach(row => {
+            const price = parseFloat(row.querySelector('.item-price').value) || 0;
+            const qty = parseInt(row.querySelector('.item-qty').value) || 0;
+            const subtotal = price * qty;
+            items.push({
+                item_name: row.querySelector('.item-name').value || 'Item Name',
+                price: price,
+                quantity: qty,
+                subtotal: subtotal
+            });
+            grandTotal += subtotal;
+        });
+
         return {
             id: editingId || 'NEW',
             customer_name: document.getElementById('customerName').value || 'Customer Name',
-            item_name: document.getElementById('itemName').value || 'Item Name',
-            price: parseFloat(priceInput.value) || 0,
-            quantity: parseInt(quantityInput.value) || 0,
-            total: (parseFloat(priceInput.value) || 0) * (parseInt(quantityInput.value) || 0),
+            items: items,
+            total: grandTotal,
             created_at: new Date().toISOString()
         };
     };
@@ -321,11 +413,11 @@ document.addEventListener('DOMContentLoaded', () => {
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
+        const formData = getFormData();
         const data = {
-            customer_name: document.getElementById('customerName').value,
-            item_name: document.getElementById('itemName').value,
-            price: parseFloat(priceInput.value),
-            quantity: parseInt(quantityInput.value)
+            customer_name: formData.customer_name,
+            items: formData.items,
+            total: formData.total
         };
 
         const action = editingId ? 'update' : 'create';
@@ -372,6 +464,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
                     SAVE INVOICE
                 `;
+                itemsContainer.innerHTML = '';
+                addItemRow();
                 updateTotal();
                 fetchInvoices();
             } else {
@@ -386,4 +480,5 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initial Load
     fetchUserInfo();
     fetchInvoices();
+    addItemRow();
 });
