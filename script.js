@@ -5,6 +5,16 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log("Micro Invoice POS Initializing...");
+    if (typeof html2canvas === 'undefined') {
+        console.warn("html2canvas not loaded yet. Retrying in 1s...");
+        setTimeout(() => {
+            if (typeof html2canvas === 'undefined') {
+                console.error("html2canvas failed to load. PNG generation will not work.");
+            } else {
+                console.log("html2canvas loaded successfully.");
+            }
+        }, 1000);
+    }
     const form = document.getElementById('invoiceForm');
     const itemsContainer = document.getElementById('itemsContainer');
     const addItemBtn = document.getElementById('addItemBtn');
@@ -46,43 +56,60 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const updateUIWithProfile = (profile) => {
-        if (!profile) return;
+        if (!profile) {
+            console.log("No profile data found in check response.");
+            return;
+        }
         
         const name = profile.shop_name || "Micro Invoice POS";
-        shopNameDisplay.textContent = name;
-        footerShopName.textContent = name;
+        if (shopNameDisplay) shopNameDisplay.textContent = name;
+        if (footerShopName) footerShopName.textContent = name;
         
         if (profile.shop_logo) {
-            headerLogoImg.src = profile.shop_logo;
-            shopLogoHeader.style.display = 'block';
-            defaultIconBox.style.display = 'none';
-            shopTagline.style.display = 'none';
+            if (headerLogoImg) headerLogoImg.src = profile.shop_logo;
+            if (shopLogoHeader) shopLogoHeader.style.display = 'block';
+            if (defaultIconBox) defaultIconBox.style.display = 'none';
+            if (shopTagline) shopTagline.style.display = 'none';
         } else {
-            shopLogoHeader.style.display = 'none';
-            defaultIconBox.style.display = 'flex';
-            shopTagline.style.display = 'block';
+            if (shopLogoHeader) shopLogoHeader.style.display = 'none';
+            if (defaultIconBox) defaultIconBox.style.display = 'flex';
+            if (shopTagline) shopTagline.style.display = 'block';
         }
+        console.log("UI updated with profile:", name);
     };
 
     // Profile Modal Logic
     if (profileBtn) {
+        console.log("Profile button initialized");
         profileBtn.addEventListener('click', () => {
+            console.log("Profile button clicked");
             if (userProfile) {
-                document.getElementById('shopName').value = userProfile.shop_name || '';
-                document.getElementById('shopAddress').value = userProfile.address || '';
-                document.getElementById('shopPhone').value = userProfile.phone || '';
-                document.getElementById('shopGstin').value = userProfile.gstin || '';
-                document.getElementById('shopEmail').value = userProfile.email || '';
+                const shopNameInput = document.getElementById('shopName');
+                const shopAddressInput = document.getElementById('shopAddress');
+                const shopPhoneInput = document.getElementById('shopPhone');
+                const shopGstinInput = document.getElementById('shopGstin');
+                const shopEmailInput = document.getElementById('shopEmail');
+
+                if (shopNameInput) shopNameInput.value = userProfile.shop_name || '';
+                if (shopAddressInput) shopAddressInput.value = userProfile.address || '';
+                if (shopPhoneInput) shopPhoneInput.value = userProfile.phone || '';
+                if (shopGstinInput) shopGstinInput.value = userProfile.gstin || '';
+                if (shopEmailInput) shopEmailInput.value = userProfile.email || '';
                 
-                if (userProfile.shop_logo) {
-                    document.getElementById('logoPreview').innerHTML = `<img src="${userProfile.shop_logo}" alt="Logo">`;
+                const logoPreview = document.getElementById('logoPreview');
+                const signaturePreview = document.getElementById('signaturePreview');
+
+                if (logoPreview && userProfile.shop_logo) {
+                    logoPreview.innerHTML = `<img src="${userProfile.shop_logo}" alt="Logo">`;
                 }
-                if (userProfile.signature) {
-                    document.getElementById('signaturePreview').innerHTML = `<img src="${userProfile.signature}" alt="Signature">`;
+                if (signaturePreview && userProfile.signature) {
+                    signaturePreview.innerHTML = `<img src="${userProfile.signature}" alt="Signature">`;
                 }
             }
-            profileModal.style.display = 'block';
+            if (profileModal) profileModal.style.display = 'block';
         });
+    } else {
+        console.error("Profile button NOT found in DOM!");
     }
 
     if (closeProfileModal) {
@@ -594,20 +621,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Form Action Buttons
     const getFormData = () => {
+        const customerNameInput = document.getElementById('customerName');
         const items = [];
         let grandTotal = 0;
         document.querySelectorAll('.item-row').forEach(row => {
-            const price = parseFloat(row.querySelector('.item-price').value) || 0;
-            const qty = parseInt(row.querySelector('.item-qty').value) || 0;
-            const discount = parseFloat(row.querySelector('.item-discount').value) || 0;
-            const gstRate = parseInt(row.querySelector('.item-gst').value) || 0;
+            const nameInput = row.querySelector('.item-name');
+            const priceInput = row.querySelector('.item-price');
+            const qtyInput = row.querySelector('.item-qty');
+            const discInput = row.querySelector('.item-discount');
+            const gstInput = row.querySelector('.item-gst');
+
+            if (!nameInput || !priceInput || !qtyInput) return;
+
+            const price = parseFloat(priceInput.value) || 0;
+            const qty = parseInt(qtyInput.value) || 0;
+            const discount = parseFloat(discInput ? discInput.value : 0) || 0;
+            const gstRate = parseInt(gstInput ? gstInput.value : 0) || 0;
             
             const baseAmount = (price * qty) - discount;
             const gstAmount = baseAmount * (gstRate / 100);
             const subtotal = baseAmount + gstAmount;
 
             items.push({
-                item_name: row.querySelector('.item-name').value || 'Item Name',
+                item_name: nameInput.value || 'Item Name',
                 price: price,
                 quantity: qty,
                 discount: discount,
@@ -619,83 +655,88 @@ document.addEventListener('DOMContentLoaded', () => {
 
         return {
             id: editingId || 'NEW',
-            customer_name: document.getElementById('customerName').value || 'Customer Name',
+            customer_name: customerNameInput ? customerNameInput.value : 'Customer Name',
             items: items,
             total: grandTotal,
             created_at: new Date().toISOString()
         };
     };
 
-    formPreviewBtn.addEventListener('click', () => handlePreview(null, null, getFormData()));
-    formDownloadBtn.addEventListener('click', () => handleDownload(null, null, getFormData()));
-    formShareBtn.addEventListener('click', () => handleShare(null, null, getFormData()));
+    if (formPreviewBtn) formPreviewBtn.addEventListener('click', () => handlePreview(null, null, getFormData()));
+    if (formDownloadBtn) formDownloadBtn.addEventListener('click', () => handleDownload(null, null, getFormData()));
+    if (formShareBtn) formShareBtn.addEventListener('click', () => handleShare(null, null, getFormData()));
 
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();
+    if (form) {
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            console.log("Invoice form submitted");
 
-        const formData = getFormData();
-        const data = {
-            customer_name: formData.customer_name,
-            items: formData.items,
-            total: formData.total
-        };
+            const formData = getFormData();
+            const data = {
+                customer_name: formData.customer_name,
+                items: formData.items,
+                total: formData.total
+            };
 
-        const action = editingId ? 'update' : 'create';
-        if (editingId) data.id = editingId;
+            const action = editingId ? 'update' : 'create';
+            if (editingId) data.id = editingId;
 
-        try {
-            const response = await fetch(`api.php?action=${action}`, {
-                method: 'POST',
-                body: JSON.stringify(data),
-                headers: { 'Content-Type': 'application/json' }
-            });
-
-            if (response.status === 401) {
-                window.location.href = 'auth.html';
-                return;
-            }
-
-            if (!response.ok) {
-                let errorMsg = 'Server Error ' + response.status;
-                try {
-                    const errorData = await response.json();
-                    errorMsg = errorData.error || errorData.details || errorMsg;
-                } catch (e) {
-                    const rawText = await response.text();
-                    if (rawText) errorMsg = rawText.substring(0, 200);
-                }
-                throw new Error(errorMsg);
-            }
-
-            let result;
-            const responseText = await response.text();
             try {
-                result = JSON.parse(responseText);
-            } catch (e) {
-                console.error('JSON Parse Error. Raw response:', responseText);
-                throw new Error("Server returned invalid data. Raw response: " + responseText.substring(0, 300));
-            }
+                const response = await fetch(`api.php?action=${action}`, {
+                    method: 'POST',
+                    body: JSON.stringify(data),
+                    headers: { 'Content-Type': 'application/json' }
+                });
 
-            if (result.success) {
-                showStatus(editingId ? 'Invoice updated!' : 'Invoice saved!', 'success');
-                form.reset();
-                editingId = null;
-                saveBtn.innerHTML = `
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-                    SAVE INVOICE
-                `;
-                itemsContainer.innerHTML = '';
-                addItemRow();
-                updateTotal();
-                fetchInvoices();
-            } else {
-                showStatus('Error: ' + (result.error || 'Unknown error'), 'error');
+                if (response.status === 401) {
+                    window.location.href = 'auth.html';
+                    return;
+                }
+
+                if (!response.ok) {
+                    let errorMsg = 'Server Error ' + response.status;
+                    try {
+                        const errorData = await response.json();
+                        errorMsg = errorData.error || errorData.details || errorMsg;
+                    } catch (e) {
+                        const rawText = await response.text();
+                        if (rawText) errorMsg = rawText.substring(0, 200);
+                    }
+                    throw new Error(errorMsg);
+                }
+
+                let result;
+                const responseText = await response.text();
+                try {
+                    result = JSON.parse(responseText);
+                } catch (e) {
+                    console.error('JSON Parse Error. Raw response:', responseText);
+                    throw new Error("Server returned invalid data. Raw response: " + responseText.substring(0, 300));
+                }
+
+                if (result.success) {
+                    showStatus(editingId ? 'Invoice updated!' : 'Invoice saved!', 'success');
+                    form.reset();
+                    editingId = null;
+                    if (saveBtn) {
+                        saveBtn.innerHTML = `
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                            SAVE INVOICE
+                        `;
+                    }
+                    itemsContainer.innerHTML = '';
+                    addItemRow();
+                    updateTotal();
+                    fetchInvoices();
+                } else {
+                    showStatus('Error: ' + (result.error || 'Unknown error'), 'error');
+                }
+            } catch (error) {
+                console.error('Error saving invoice:', error);
+                showStatus('Connection Error: ' + error.message + ' (Try Ctrl+F5 to clear cache)', 'error');
             }
-        } catch (error) {
-            console.error('Error saving invoice:', error);
-            showStatus('Connection Error: ' + error.message + ' (Try Ctrl+F5 to clear cache)', 'error');
-        }
-    });
+        });
+    }
 
     // Initial Load
     fetchUserInfo();
