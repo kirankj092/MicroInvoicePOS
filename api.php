@@ -1,7 +1,7 @@
 <?php
 ob_start();
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+error_reporting(0);
+ini_set('display_errors', 0);
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
@@ -140,6 +140,15 @@ try {
         $conn->begin_transaction();
 
         try {
+            // Verify ownership before updating
+            $check_stmt = $conn->prepare("SELECT id FROM invoices WHERE id=? AND user_id=?");
+            $check_stmt->bind_param("ii", $id, $user_id);
+            $check_stmt->execute();
+            if ($check_stmt->get_result()->num_rows === 0) {
+                throw new Exception("Unauthorized or invoice not found.");
+            }
+            $check_stmt->close();
+
             $stmt = $conn->prepare("UPDATE invoices SET customer_name=?, total=? WHERE id=? AND user_id=?");
             $stmt->bind_param("sdii", $customer, $total, $id, $user_id);
             $stmt->execute();

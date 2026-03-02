@@ -41,6 +41,17 @@ document.addEventListener('DOMContentLoaded', () => {
     let editingId = null;
     let userProfile = null;
 
+    // Security: Escape HTML to prevent XSS
+    const escapeHTML = (str) => {
+        if (!str) return "";
+        return String(str)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    };
+
     // Fetch User Info & Profile
     const fetchUserInfo = async () => {
         try {
@@ -250,12 +261,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const date = new Date(inv.created_at).toLocaleDateString();
             
             const itemsSummary = inv.items && inv.items.length > 0 
-                ? (inv.items.length === 1 ? inv.items[0].item_name : `${inv.items[0].item_name} (+${inv.items.length - 1} more)`)
+                ? (inv.items.length === 1 ? escapeHTML(inv.items[0].item_name) : `${escapeHTML(inv.items[0].item_name)} (+${inv.items.length - 1} more)`)
                 : 'No items';
 
             row.innerHTML = `
                 <td style="font-family: monospace; color: #64748b;">${date}</td>
-                <td style="font-weight: 500;">${inv.customer_name}</td>
+                <td style="font-weight: 500;">${escapeHTML(inv.customer_name)}</td>
                 <td>${itemsSummary}</td>
                 <td class="text-right text-bold" style="color: #1e4e8c;">₹${parseFloat(inv.total).toFixed(2)}</td>
                 <td class="text-right action-cell">
@@ -342,11 +353,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const tr = document.createElement('tr');
                 tr.style.borderBottom = '1px solid #f1f5f9';
                 tr.innerHTML = `
-                    <td style="padding: 15px 12px; font-size: 14px;">${item.item_name}</td>
-                    <td style="padding: 15px 12px; text-align: center; font-size: 14px;">${item.quantity}</td>
+                    <td style="padding: 15px 12px; font-size: 14px;">${escapeHTML(item.item_name)}</td>
+                    <td style="padding: 15px 12px; text-align: center; font-size: 14px;">${escapeHTML(item.quantity)}</td>
                     <td style="padding: 15px 12px; text-align: right; font-size: 14px;">₹${parseFloat(item.price).toFixed(2)}</td>
                     <td style="padding: 15px 12px; text-align: right; font-size: 14px;">₹${parseFloat(item.discount || 0).toFixed(2)}</td>
-                    <td style="padding: 15px 12px; text-align: right; font-size: 14px;">${item.gst_rate}%</td>
+                    <td style="padding: 15px 12px; text-align: right; font-size: 14px;">${escapeHTML(item.gst_rate)}%</td>
                     <td style="padding: 15px 12px; text-align: right; font-size: 14px; font-weight: 600;">₹${parseFloat(item.subtotal).toFixed(2)}</td>
                 `;
                 itemsBody.appendChild(tr);
@@ -503,7 +514,7 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
             <div class="row-content">
                 <div class="input-group" style="margin-bottom: 0.75rem;">
-                    <input type="text" class="item-name" required placeholder="Item Name" value="${data ? data.item_name : ''}">
+                    <input type="text" class="item-name" required placeholder="Item Name" value="${data ? escapeHTML(data.item_name) : ''}">
                 </div>
                 <div class="input-row">
                     <div class="input-group">
