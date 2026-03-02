@@ -42,6 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const navItems = document.querySelectorAll('.nav-item');
     const sections = document.querySelectorAll('.content-section');
     const sidebarLogout = document.getElementById('sidebarLogout');
+    const closeSidebar = document.getElementById('closeSidebar');
 
     let editingId = null;
     let userProfile = null;
@@ -151,9 +152,16 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    if (menuToggle) {
-        menuToggle.addEventListener('click', () => {
+    if (menuToggle && sidebar) {
+        menuToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
             sidebar.classList.toggle('open');
+        });
+    }
+
+    if (closeSidebar) {
+        closeSidebar.addEventListener('click', () => {
+            sidebar.classList.remove('open');
         });
     }
 

@@ -4,20 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
     <title>Micro Invoice POS</title>
-    <link rel="stylesheet" href="style.css?v=2.3">
-    <script>
-        // Quick Auth Check before page loads
-        fetch('auth_api.php?action=check')
-            .then(res => res.json())
-            .then(data => {
-                if (!data.authenticated) {
-                    window.location.href = 'auth.html';
-                }
-            }).catch(() => {
-                // In preview environment, we might not have PHP, so we allow it
-                console.log("Auth check skipped in preview");
-            });
-    </script>
+    <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -57,6 +44,17 @@
 
         <div class="app-body">
             <aside id="sidebar" class="sidebar">
+                <div class="sidebar-header">
+                    <div class="logo-section">
+                        <div class="icon-box">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17.5V19"/><path d="M12 5v1.5"/></svg>
+                        </div>
+                        <span style="font-weight: 700; color: var(--primary);">MENU</span>
+                    </div>
+                    <button id="closeSidebar" class="close-sidebar-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
                 <nav class="sidebar-nav">
                     <a href="#" class="nav-item active" data-section="dashboard">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
@@ -444,6 +442,6 @@
             </div>
         </div>
     </div>
-    <script src="script.js?v=2.3"></script>
+    <script src="script.js"></script>
 </body>
 </html>

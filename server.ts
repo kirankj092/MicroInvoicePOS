@@ -61,6 +61,11 @@ const PORT = 3000;
 
 app.use(express.json());
 
+app.use((req, res, next) => {
+    console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+    next();
+});
+
 // Mock session for preview - Persist to file to survive restarts
 const SESSION_FILE = './mock_session.json';
 let mockSession: any = {};
@@ -104,9 +109,25 @@ app.all("/auth_api.php", async (req, res) => {
 
         if (action === 'check') {
             if (mockSession.user_id) {
-                return res.json({ authenticated: true, username: mockSession.username });
+                return res.json({ 
+                    authenticated: true, 
+                    username: mockSession.username,
+                    profile: mockSession.profile || {
+                        shop_name: "Micro Invoice POS",
+                        address: "123 Business St, City",
+                        phone: "1234567890",
+                        gstin: "22AAAAA0000A1Z5",
+                        email: "contact@example.com"
+                    }
+                });
             }
             return res.json({ authenticated: false });
+        }
+
+        if (action === 'update_profile') {
+            mockSession.profile = req.body;
+            saveSession();
+            return res.json({ success: true });
         }
 
         if (action === 'logout') {
