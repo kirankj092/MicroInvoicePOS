@@ -202,6 +202,7 @@ try {
         break;
 
     case 'forgot-password':
+    case 'forgot_password':
         $data = getJsonInput();
         $email = $data['email'] ?? '';
 
@@ -254,6 +255,7 @@ try {
         break;
 
     case 'verify-code':
+    case 'verify_code':
         $data = getJsonInput();
         $email = $data['email'] ?? '';
         $code = $data['code'] ?? '';
@@ -270,6 +272,7 @@ try {
         break;
 
     case 'reset-password':
+    case 'reset_password':
         $data = getJsonInput();
         $email = $data['email'] ?? '';
         $code = $data['code'] ?? '';

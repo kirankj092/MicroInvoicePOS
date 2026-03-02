@@ -82,6 +82,7 @@ app.all("/auth_api.php", async (req, res) => {
     const method = req.method;
 
     try {
+        console.log(`Auth API call: action=${action}, method=${method}`);
         if (action === 'register') {
             const { username, email, password } = req.body;
             const stmt = db.prepare("INSERT INTO users (username, email, password) VALUES (?, ?, ?)");
@@ -114,7 +115,7 @@ app.all("/auth_api.php", async (req, res) => {
             return res.json({ success: true });
         }
 
-        if (action === 'forgot-password') {
+        if (action === 'forgot-password' || action === 'forgot_password') {
             const { email } = req.body;
             const user = db.prepare("SELECT * FROM users WHERE email = ?").get(email) as any;
             if (!user) {
@@ -143,7 +144,7 @@ app.all("/auth_api.php", async (req, res) => {
             }
         }
 
-        if (action === 'verify-code') {
+        if (action === 'verify-code' || action === 'verify_code') {
             const { email, code } = req.body;
             const reset = db.prepare("SELECT * FROM password_resets WHERE email = ? AND code = ? AND expires_at > ?").get(email, code, new Date().toISOString()) as any;
             if (reset) {
@@ -152,7 +153,7 @@ app.all("/auth_api.php", async (req, res) => {
             return res.json({ error: "Invalid or expired code" });
         }
 
-        if (action === 'reset-password') {
+        if (action === 'reset-password' || action === 'reset_password') {
             const { email, code, newPassword } = req.body;
             const reset = db.prepare("SELECT * FROM password_resets WHERE email = ? AND code = ? AND expires_at > ?").get(email, code, new Date().toISOString()) as any;
             if (reset) {
@@ -163,7 +164,7 @@ app.all("/auth_api.php", async (req, res) => {
             return res.json({ error: "Invalid or expired code" });
         }
 
-        res.status(400).json({ error: "Invalid action" });
+        res.status(400).json({ error: `Invalid action: ${action}` });
     } catch (err: any) {
         res.status(500).json({ error: err.message });
     }
