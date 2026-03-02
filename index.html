@@ -26,16 +26,21 @@
 <body>
     <div class="app-container">
         <header class="main-header">
-            <div class="logo-section">
-                <div id="shopLogoHeader" class="shop-logo-container" style="display: none; margin-right: 15px;">
-                    <img id="headerLogoImg" src="" alt="Shop Logo" style="height: 40px; border-radius: 4px;">
-                </div>
-                <div class="icon-box" id="defaultIconBox">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17.5V19"/><path d="M12 5v1.5"/></svg>
-                </div>
-                <div class="title-box">
-                    <h1 id="shopNameDisplay">Micro Invoice POS</h1>
-                    <p id="shopTagline">Professional Billing System</p>
+            <div class="header-left">
+                <button id="menuToggle" class="menu-toggle" title="Toggle Menu">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                </button>
+                <div class="logo-section">
+                    <div id="shopLogoHeader" class="shop-logo-container" style="display: none; margin-right: 15px;">
+                        <img id="headerLogoImg" src="" alt="Shop Logo" style="height: 40px; border-radius: 4px;">
+                    </div>
+                    <div class="icon-box" id="defaultIconBox">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17.5V19"/><path d="M12 5v1.5"/></svg>
+                    </div>
+                    <div class="title-box">
+                        <h1 id="shopNameDisplay">Micro Invoice POS</h1>
+                        <p id="shopTagline">Professional Billing System</p>
+                    </div>
                 </div>
             </div>
             <div class="user-actions">
@@ -50,107 +55,287 @@
             </div>
         </header>
 
-        <main class="content-grid">
-            <section class="form-section">
-                <div class="card">
-                    <div class="card-header">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
-                        <h2>New Invoice</h2>
+        <div class="app-body">
+            <aside id="sidebar" class="sidebar">
+                <nav class="sidebar-nav">
+                    <a href="#" class="nav-item active" data-section="dashboard">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="#" class="nav-item" data-section="sales">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17.5V19"/><path d="M12 5v1.5"/></svg>
+                        <span>Sales</span>
+                    </a>
+                    <a href="#" class="nav-item" data-section="purchases">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                        <span>Purchases</span>
+                    </a>
+                    <a href="#" class="nav-item" data-section="customers">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        <span>Customers</span>
+                    </a>
+                    <a href="#" class="nav-item" data-section="vendors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        <span>Vendors</span>
+                    </a>
+                    <a href="#" class="nav-item" data-section="items">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+                        <span>Items</span>
+                    </a>
+                    <div class="nav-divider"></div>
+                    <a href="#" class="nav-item" data-section="profile">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        <span>Profile</span>
+                    </a>
+                    <a href="#" class="nav-item" data-section="settings">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                        <span>Settings</span>
+                    </a>
+                    <a href="#" class="nav-item logout-nav" id="sidebarLogout">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+                        <span>Logout</span>
+                    </a>
+                </nav>
+            </aside>
+
+            <main class="main-content">
+                <!-- Dashboard Section -->
+                <section id="dashboardSection" class="content-section active">
+                    <div class="section-header-main">
+                        <h2>Dashboard Overview</h2>
                     </div>
-                    <form id="invoiceForm" class="card-body">
-                        <div class="input-group">
-                            <label for="customerName">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                                Customer Name
-                            </label>
-                            <input type="text" id="customerName" required placeholder="e.g. John Doe">
-                        </div>
-
-                        <div class="items-section">
-                            <div class="section-header">
-                                <label>Invoice Items</label>
-                                <button type="button" id="addItemBtn" class="btn-add-item">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
-                                    Add Item
-                                </button>
+                    <div class="dashboard-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon sales">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17.5V19"/><path d="M12 5v1.5"/></svg>
                             </div>
-                            <div id="itemsContainer" class="items-container">
-                                <!-- Line items will be added here -->
+                            <div class="stat-info">
+                                <span class="stat-label">Total Sales</span>
+                                <span class="stat-value" id="dashTotalSales">₹0.00</span>
                             </div>
                         </div>
-
-                        <div class="total-banner">
-                            <span class="label">Total Amount</span>
-                            <span class="value" id="totalDisplay">₹0.00</span>
-                        </div>
-
-                        <div class="form-actions">
-                            <button type="submit" class="btn-primary" id="saveBtn">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-                                SAVE INVOICE
-                            </button>
-                            <div class="secondary-actions">
-                                <button type="button" class="btn-secondary" id="formPreviewBtn" title="Preview PNG">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-                                </button>
-                                <button type="button" class="btn-secondary" id="formDownloadBtn" title="Download PNG">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
-                                </button>
-                                <button type="button" class="btn-secondary" id="formShareBtn" title="Share Details">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/></svg>
-                                </button>
+                        <div class="stat-card">
+                            <div class="stat-icon invoices">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                            </div>
+                            <div class="stat-info">
+                                <span class="stat-label">Invoices</span>
+                                <span class="stat-value" id="dashInvoiceCount">0</span>
                             </div>
                         </div>
-                    </form>
-                    <div id="statusMessage" class="status-message"></div>
-                </div>
-            </section>
-
-            <section class="history-section">
-                <div class="card">
-                    <div class="card-header">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
-                        <h2>Recent Invoices</h2>
-                    </div>
-                    <div class="table-container">
-                        <table id="invoiceTable">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Customer</th>
-                                    <th>Item</th>
-                                    <th class="text-right">Total</th>
-                                    <th class="text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="invoiceList">
-                                <!-- Invoices will be injected here -->
-                            </tbody>
-                        </table>
-                        <div id="emptyState" class="empty-state">
-                            No invoices recorded yet.
-                        </div>
-                        <div id="paginationContainer" class="pagination-container" style="display: none;">
-                            <button id="prevPage" class="btn-pagination" disabled>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-                                Previous
-                            </button>
-                            <span id="pageInfo" class="page-info">Page 1 of 1</span>
-                            <button id="nextPage" class="btn-pagination">
-                                Next
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-                            </button>
+                        <div class="stat-card">
+                            <div class="stat-icon customers">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            </div>
+                            <div class="stat-info">
+                                <span class="stat-label">Customers</span>
+                                <span class="stat-value" id="dashCustomerCount">0</span>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </section>
-        </main>
+                </section>
+
+                <!-- Sales Section (Existing Invoice Logic) -->
+                <section id="salesSection" class="content-section">
+                    <div class="section-header-main">
+                        <h2>Sales & Invoicing</h2>
+                    </div>
+                    <div class="content-grid">
+                        <section class="form-section">
+                            <!-- Existing Invoice Form -->
+                            <div class="card">
+                                <div class="card-header">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                                    <h2>New Invoice</h2>
+                                </div>
+                                <form id="invoiceForm" class="card-body">
+                                    <div class="input-group">
+                                        <label for="customerName">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                            Customer Name
+                                        </label>
+                                        <input type="text" id="customerName" required placeholder="e.g. John Doe">
+                                    </div>
+
+                                    <div class="items-section">
+                                        <div class="section-header">
+                                            <label>Invoice Items</label>
+                                            <button type="button" id="addItemBtn" class="btn-add-item">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                                                Add Item
+                                            </button>
+                                        </div>
+                                        <div id="itemsContainer" class="items-container">
+                                            <!-- Line items will be added here -->
+                                        </div>
+                                    </div>
+
+                                    <div class="total-banner">
+                                        <span class="label">Total Amount</span>
+                                        <span class="value" id="totalDisplay">₹0.00</span>
+                                    </div>
+
+                                    <div class="form-actions">
+                                        <button type="submit" class="btn-primary" id="saveBtn">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                                            SAVE INVOICE
+                                        </button>
+                                        <div class="secondary-actions">
+                                            <button type="button" class="btn-secondary" id="formPreviewBtn" title="Preview PNG">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                                            </button>
+                                            <button type="button" class="btn-secondary" id="formDownloadBtn" title="Download PNG">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                                            </button>
+                                            <button type="button" class="btn-secondary" id="formShareBtn" title="Share Details">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/></svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                                <div id="statusMessage" class="status-message"></div>
+                            </div>
+                        </section>
+
+                        <section class="history-section">
+                            <div class="card">
+                                <div class="card-header">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
+                                    <h2>Recent Invoices</h2>
+                                </div>
+                                <div class="table-container">
+                                    <table id="invoiceTable">
+                                        <thead>
+                                            <tr>
+                                                <th>Date</th>
+                                                <th>Customer</th>
+                                                <th>Item</th>
+                                                <th class="text-right">Total</th>
+                                                <th class="text-right">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="invoiceList">
+                                            <!-- Invoices will be injected here -->
+                                        </tbody>
+                                    </table>
+                                    <div id="emptyState" class="empty-state">
+                                        No invoices recorded yet.
+                                    </div>
+                                    <div id="paginationContainer" class="pagination-container" style="display: none;">
+                                        <button id="prevPage" class="btn-pagination" disabled>
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                                            Previous
+                                        </button>
+                                        <span id="pageInfo" class="page-info">Page 1 of 1</span>
+                                        <button id="nextPage" class="btn-pagination">
+                                            Next
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </section>
+
+                <!-- Placeholder Sections -->
+                <section id="purchasesSection" class="content-section">
+                    <div class="section-header-main">
+                        <h2>Purchases</h2>
+                    </div>
+                    <div class="placeholder-content">
+                        <p>Purchase management functionality coming soon...</p>
+                    </div>
+                </section>
+
+                <section id="customersSection" class="content-section">
+                    <div class="section-header-main">
+                        <h2>Customers</h2>
+                    </div>
+                    <div class="placeholder-content">
+                        <p>Customer management functionality coming soon...</p>
+                    </div>
+                </section>
+
+                <section id="vendorsSection" class="content-section">
+                    <div class="section-header-main">
+                        <h2>Vendors</h2>
+                    </div>
+                    <div class="placeholder-content">
+                        <p>Vendor management functionality coming soon...</p>
+                    </div>
+                </section>
+
+                <section id="itemsSection" class="content-section">
+                    <div class="section-header-main">
+                        <h2>Items / Inventory</h2>
+                    </div>
+                    <div class="placeholder-content">
+                        <p>Inventory management functionality coming soon...</p>
+                    </div>
+                </section>
+
+                <section id="profileSection" class="content-section">
+                    <div class="section-header-main">
+                        <h2>Shop Profile</h2>
+                    </div>
+                    <div class="card" style="max-width: 600px; margin: 0 auto;">
+                        <form id="profileFormMain" class="card-body">
+                            <div class="input-group">
+                                <label>Shop Name</label>
+                                <input type="text" id="shopNameMain" placeholder="Enter Shop Name" required>
+                            </div>
+                            <div class="input-group">
+                                <label>Address</label>
+                                <textarea id="shopAddressMain" rows="2" placeholder="Enter Shop Address"></textarea>
+                            </div>
+                            <div class="input-row">
+                                <div class="input-group">
+                                    <label>Phone Number</label>
+                                    <input type="text" id="shopPhoneMain" placeholder="Phone Number">
+                                </div>
+                                <div class="input-group">
+                                    <label>GSTIN</label>
+                                    <input type="text" id="shopGstinMain" placeholder="GSTIN">
+                                </div>
+                            </div>
+                            <div class="input-group">
+                                <label>Email Address</label>
+                                <input type="email" id="shopEmailMain" placeholder="Shop Email">
+                            </div>
+                            <div class="input-row">
+                                <div class="input-group">
+                                    <label>Shop Logo</label>
+                                    <input type="file" id="shopLogoInputMain" accept="image/*">
+                                    <div id="logoPreviewMain" class="image-preview"></div>
+                                </div>
+                                <div class="input-group">
+                                    <label>Digital Signature</label>
+                                    <input type="file" id="signatureInputMain" accept="image/*">
+                                    <div id="signaturePreviewMain" class="image-preview"></div>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn-primary">SAVE PROFILE</button>
+                        </form>
+                    </div>
+                </section>
+
+                <section id="settingsSection" class="content-section">
+                    <div class="section-header-main">
+                        <h2>Settings</h2>
+                    </div>
+                    <div class="placeholder-content">
+                        <p>Application settings coming soon...</p>
+                    </div>
+                </section>
+            </main>
+        </div>
 
         <footer class="main-footer">
             <p>&copy; 2026 <span id="footerShopName">Micro Invoice POS</span>. Built for speed and precision.</p>
         </footer>
 
-        <!-- Profile Modal -->
+        <!-- Profile Modal (Keep for quick edits if needed, but we also have a section now) -->
         <div id="profileModal" class="modal">
             <div class="modal-content">
                 <div class="modal-header">

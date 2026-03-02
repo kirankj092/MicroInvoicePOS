@@ -37,6 +37,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const shopLogoHeader = document.getElementById('shopLogoHeader');
     const headerLogoImg = document.getElementById('headerLogoImg');
     const defaultIconBox = document.getElementById('defaultIconBox');
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const navItems = document.querySelectorAll('.nav-item');
+    const sections = document.querySelectorAll('.content-section');
+    const sidebarLogout = document.getElementById('sidebarLogout');
 
     let editingId = null;
     let userProfile = null;
@@ -79,6 +84,28 @@ document.addEventListener('DOMContentLoaded', () => {
         if (shopNameDisplay) shopNameDisplay.textContent = name;
         if (footerShopName) footerShopName.textContent = name;
         
+        // Update main profile section if it exists
+        const shopNameMain = document.getElementById('shopNameMain');
+        const shopAddressMain = document.getElementById('shopAddressMain');
+        const shopPhoneMain = document.getElementById('shopPhoneMain');
+        const shopGstinMain = document.getElementById('shopGstinMain');
+        const shopEmailMain = document.getElementById('shopEmailMain');
+        const logoPreviewMain = document.getElementById('logoPreviewMain');
+        const signaturePreviewMain = document.getElementById('signaturePreviewMain');
+
+        if (shopNameMain) shopNameMain.value = profile.shop_name || '';
+        if (shopAddressMain) shopAddressMain.value = profile.address || '';
+        if (shopPhoneMain) shopPhoneMain.value = profile.phone || '';
+        if (shopGstinMain) shopGstinMain.value = profile.gstin || '';
+        if (shopEmailMain) shopEmailMain.value = profile.email || '';
+        
+        if (logoPreviewMain && profile.shop_logo) {
+            logoPreviewMain.innerHTML = `<img src="${profile.shop_logo}" alt="Logo">`;
+        }
+        if (signaturePreviewMain && profile.signature) {
+            signaturePreviewMain.innerHTML = `<img src="${profile.signature}" alt="Signature">`;
+        }
+
         if (profile.shop_logo) {
             if (headerLogoImg) headerLogoImg.src = profile.shop_logo;
             if (shopLogoHeader) shopLogoHeader.style.display = 'block';
@@ -91,6 +118,117 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         console.log("UI updated with profile:", name);
     };
+
+    // Navigation Logic
+    const switchSection = (sectionId) => {
+        sections.forEach(s => s.classList.remove('active'));
+        navItems.forEach(n => n.classList.remove('active'));
+
+        const targetSection = document.getElementById(`${sectionId}Section`);
+        const targetNav = document.querySelector(`.nav-item[data-section="${sectionId}"]`);
+
+        if (targetSection) targetSection.classList.add('active');
+        if (targetNav) targetNav.classList.add('active');
+
+        // On mobile, close sidebar after clicking
+        if (window.innerWidth <= 768) {
+            sidebar.classList.remove('open');
+        }
+
+        // Special logic for sections
+        if (sectionId === 'dashboard') {
+            updateDashboardStats();
+        }
+    };
+
+    navItems.forEach(item => {
+        item.addEventListener('click', (e) => {
+            const section = item.dataset.section;
+            if (section) {
+                e.preventDefault();
+                switchSection(section);
+            }
+        });
+    });
+
+    if (menuToggle) {
+        menuToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+        });
+    }
+
+    // Close sidebar when clicking outside on mobile
+    document.addEventListener('click', (e) => {
+        if (window.innerWidth <= 768 && 
+            !sidebar.contains(e.target) && 
+            !menuToggle.contains(e.target) && 
+            sidebar.classList.contains('open')) {
+            sidebar.classList.remove('open');
+        }
+    });
+
+    const updateDashboardStats = () => {
+        const dashTotalSales = document.getElementById('dashTotalSales');
+        const dashInvoiceCount = document.getElementById('dashInvoiceCount');
+        const dashCustomerCount = document.getElementById('dashCustomerCount');
+
+        if (!allInvoices) return;
+
+        const total = allInvoices.reduce((sum, inv) => sum + parseFloat(inv.total || 0), 0);
+        const customers = new Set(allInvoices.map(inv => inv.customer_name)).size;
+
+        if (dashTotalSales) dashTotalSales.textContent = `₹${total.toFixed(2)}`;
+        if (dashInvoiceCount) dashInvoiceCount.textContent = allInvoices.length;
+        if (dashCustomerCount) dashCustomerCount.textContent = customers;
+    };
+
+    // Profile Section Logic (Main)
+    const profileFormMain = document.getElementById('profileFormMain');
+    if (profileFormMain) {
+        handleImageUpload(document.getElementById('shopLogoInputMain'), 'logoPreviewMain');
+        handleImageUpload(document.getElementById('signatureInputMain'), 'signaturePreviewMain');
+
+        profileFormMain.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const logoImg = document.getElementById('logoPreviewMain').querySelector('img');
+            const signatureImg = document.getElementById('signaturePreviewMain').querySelector('img');
+            
+            const data = {
+                shop_name: document.getElementById('shopNameMain').value,
+                address: document.getElementById('shopAddressMain').value,
+                phone: document.getElementById('shopPhoneMain').value,
+                gstin: document.getElementById('shopGstinMain').value,
+                email: document.getElementById('shopEmailMain').value,
+                shop_logo: logoImg ? logoImg.src : null,
+                signature: signatureImg ? signatureImg.src : null
+            };
+
+            try {
+                const response = await fetch('auth_api.php?action=update_profile', {
+                    method: 'POST',
+                    body: JSON.stringify(data),
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const result = await response.json();
+                if (result.success) {
+                    showStatus('Profile updated!', 'success');
+                    fetchUserInfo();
+                } else {
+                    showStatus('Error: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showStatus('Error saving profile', 'error');
+            }
+        });
+    }
+
+    // Sidebar Logout
+    if (sidebarLogout) {
+        sidebarLogout.addEventListener('click', (e) => {
+            e.preventDefault();
+            logoutBtn.click();
+        });
+    }
 
     // Profile Modal Logic
     if (profileBtn) {
@@ -236,6 +374,7 @@ document.addEventListener('DOMContentLoaded', () => {
             allInvoices = invoices;
             currentPage = 1;
             renderInvoices();
+            updateDashboardStats();
         } catch (error) {
             console.error('Error fetching invoices:', error);
             if (emptyState) {
