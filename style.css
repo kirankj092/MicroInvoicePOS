@@ -635,13 +635,14 @@ td {
     }
 
     .main-header {
-        padding: 0.5rem;
+        padding: 0.75rem;
         flex-direction: column;
         align-items: stretch;
-        gap: 0.5rem;
-        background: #fff;
-        border-bottom: 1px solid var(--border);
-        box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+        gap: 0.75rem;
+        background: var(--primary);
+        border-bottom: 1px solid var(--primary-dark);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        color: #ffffff;
     }
 
     .logo-section {
@@ -651,16 +652,16 @@ td {
     }
 
     .shop-logo-container img {
-        height: 20px !important;
+        height: 32px !important;
     }
 
     .icon-box {
-        padding: 0.15rem;
+        padding: 0.35rem;
     }
 
     .icon-box svg {
-        width: 12px;
-        height: 12px;
+        width: 18px;
+        height: 18px;
     }
 
     .user-actions {
@@ -668,24 +669,27 @@ td {
         justify-content: center;
         gap: 0.25rem;
         padding-top: 0.25rem;
-        border-top: 1px dashed var(--border);
+        border-top: 1px dashed rgba(255, 255, 255, 0.2);
     }
 
     .profile-btn, .logout-btn {
         flex: 1;
         justify-content: center;
-        padding: 0.35rem 0.5rem;
-        font-size: 0.6rem;
-        border-radius: 0.35rem;
-        font-weight: 500;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.75rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
     }
 
     .title-box h1 {
-        font-size: 0.8rem;
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #ffffff;
     }
 
     .title-box p {
-        font-size: 0.55rem;
+        font-size: 0.7rem;
+        color: rgba(255, 255, 255, 0.9);
     }
 
     .card {
@@ -732,25 +736,27 @@ td {
     }
 
     .total-banner {
-        padding: 0.4rem;
-        margin: 0.3rem 0;
-        border-radius: 0.4rem;
+        padding: 0.75rem 1rem;
+        margin: 0.5rem 0;
+        border-radius: 0.6rem;
         background: linear-gradient(135deg, #1e4e8c 0%, #153a6b 100%);
-        box-shadow: 0 4px 12px rgba(30, 78, 140, 0.15);
+        box-shadow: 0 4px 12px rgba(30, 78, 140, 0.2);
+        color: #ffffff;
     }
 
     .total-banner .label {
-        font-size: 0.6rem;
+        font-size: 0.75rem;
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        opacity: 0.9;
-        font-weight: 500;
+        color: rgba(255, 255, 255, 0.9);
+        font-weight: 600;
     }
 
     .total-banner .value {
-        font-size: 1.1rem;
-        font-weight: 700;
+        font-size: 1.4rem;
+        font-weight: 800;
         letter-spacing: -0.01em;
+        color: #ffffff;
     }
 
     .btn-primary {
