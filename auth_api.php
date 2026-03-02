@@ -8,6 +8,16 @@ mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 ini_set('session.cookie_httponly', 1);
 ini_set('session.use_only_cookies', 1);
 ini_set('session.cookie_secure', isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 1 : 0);
+// Set session lifetime to 30 days (2592000 seconds) for persistent login
+ini_set('session.gc_maxlifetime', 2592000);
+session_set_cookie_params([
+    'lifetime' => 2592000,
+    'path' => '/',
+    'domain' => '',
+    'secure' => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on',
+    'httponly' => true,
+    'samesite' => 'Lax'
+]);
 session_start();
 
 header("Access-Control-Allow-Origin: *");
@@ -180,7 +190,53 @@ try {
     case 'logout':
         session_unset();
         session_destroy();
+        // Clear the session cookie explicitly
+        if (ini_get("session.use_cookies")) {
+            $params = session_get_cookie_params();
+            setcookie(session_name(), '', time() - 42000,
+                $params["path"], $params["domain"],
+                $params["secure"], $params["httponly"]
+            );
+        }
         echo json_encode(["success" => true]);
+        break;
+
+    case 'forgot_password':
+        $data = getJsonInput();
+        $email = $data['email'] ?? '';
+        $new_pass = $data['new_password'] ?? '';
+
+        if (empty($email)) {
+            echo json_encode(["error" => "Email is required."]);
+            break;
+        }
+
+        // Check if user exists
+        $stmt = $conn->prepare("SELECT id FROM users WHERE email = ?");
+        $stmt->bind_param("s", $email);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        if ($row = $result->fetch_assoc()) {
+            if (!empty($new_pass)) {
+                // Actually reset the password (for demo purposes)
+                $hashed_pass = password_hash($new_pass, PASSWORD_DEFAULT);
+                $update_stmt = $conn->prepare("UPDATE users SET password = ? WHERE id = ?");
+                $update_stmt->bind_param("si", $hashed_pass, $row['id']);
+                if ($update_stmt->execute()) {
+                    echo json_encode(["success" => true, "message" => "Password reset successfully."]);
+                } else {
+                    echo json_encode(["error" => "Failed to reset password."]);
+                }
+                $update_stmt->close();
+            } else {
+                // Just verify email exists
+                echo json_encode(["success" => true, "message" => "Email verified. Please enter your new password."]);
+            }
+        } else {
+            echo json_encode(["error" => "Email not found."]);
+        }
+        $stmt->close();
         break;
 
     default:

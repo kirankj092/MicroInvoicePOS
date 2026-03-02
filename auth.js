@@ -5,13 +5,22 @@
 document.addEventListener('DOMContentLoaded', () => {
     const loginSection = document.getElementById('loginSection');
     const registerSection = document.getElementById('registerSection');
+    const forgotSection = document.getElementById('forgotSection');
     const showRegister = document.getElementById('showRegister');
     const showLogin = document.getElementById('showLogin');
+    const showForgot = document.getElementById('showForgot');
+    const backToLogin = document.getElementById('backToLogin');
 
     const loginForm = document.getElementById('loginForm');
     const registerForm = document.getElementById('registerForm');
+    const forgotForm = document.getElementById('forgotForm');
     const loginStatus = document.getElementById('loginStatus');
     const regStatus = document.getElementById('regStatus');
+    const forgotStatus = document.getElementById('forgotStatus');
+
+    const forgotEmailStep = document.getElementById('forgotEmailStep');
+    const forgotPassStep = document.getElementById('forgotPassStep');
+    const resetPassBtn = document.getElementById('resetPassBtn');
 
     // Toggle between Login and Register
     showRegister.addEventListener('click', (e) => {
@@ -23,6 +32,21 @@ document.addEventListener('DOMContentLoaded', () => {
     showLogin.addEventListener('click', (e) => {
         e.preventDefault();
         registerSection.classList.add('hidden');
+        forgotSection.classList.add('hidden');
+        loginSection.classList.remove('hidden');
+    });
+
+    showForgot.addEventListener('click', (e) => {
+        e.preventDefault();
+        loginSection.classList.add('hidden');
+        forgotSection.classList.remove('hidden');
+        forgotEmailStep.classList.remove('hidden');
+        forgotPassStep.classList.add('hidden');
+    });
+
+    backToLogin.addEventListener('click', (e) => {
+        e.preventDefault();
+        forgotSection.classList.add('hidden');
         loginSection.classList.remove('hidden');
     });
 
@@ -120,6 +144,65 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error('Login error:', error);
             showStatus(loginStatus, 'Error: ' + error.message, 'error');
+        }
+    });
+
+    // Handle Forgot Password - Step 1: Verify Email
+    forgotForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('forgotEmail').value;
+
+        try {
+            const response = await fetch('auth_api.php?action=forgot_password', {
+                method: 'POST',
+                body: JSON.stringify({ email }),
+                headers: { 'Content-Type': 'application/json' }
+            });
+            
+            const result = await response.json();
+
+            if (result.success) {
+                showStatus(forgotStatus, result.message, 'success');
+                forgotEmailStep.classList.add('hidden');
+                forgotPassStep.classList.remove('hidden');
+            } else {
+                showStatus(forgotStatus, result.error, 'error');
+            }
+        } catch (error) {
+            showStatus(forgotStatus, 'Error: ' + error.message, 'error');
+        }
+    });
+
+    // Handle Forgot Password - Step 2: Reset Password
+    resetPassBtn.addEventListener('click', async () => {
+        const email = document.getElementById('forgotEmail').value;
+        const new_password = document.getElementById('forgotNewPass').value;
+
+        if (!new_password) {
+            showStatus(forgotStatus, 'Please enter a new password.', 'error');
+            return;
+        }
+
+        try {
+            const response = await fetch('auth_api.php?action=forgot_password', {
+                method: 'POST',
+                body: JSON.stringify({ email, new_password }),
+                headers: { 'Content-Type': 'application/json' }
+            });
+            
+            const result = await response.json();
+
+            if (result.success) {
+                showStatus(forgotStatus, result.message, 'success');
+                setTimeout(() => {
+                    forgotSection.classList.add('hidden');
+                    loginSection.classList.remove('hidden');
+                }, 2000);
+            } else {
+                showStatus(forgotStatus, result.error, 'error');
+            }
+        } catch (error) {
+            showStatus(forgotStatus, 'Error: ' + error.message, 'error');
         }
     });
 
