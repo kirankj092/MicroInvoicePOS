@@ -2,6 +2,9 @@ import express from "express";
 import Database from "better-sqlite3";
 import path from "path";
 import fs from "fs";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const db = new Database("invoices.db");
 
@@ -25,7 +28,33 @@ db.exec(`
     password TEXT NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
+
+  CREATE TABLE IF NOT EXISTS password_resets (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT NOT NULL,
+    code TEXT NOT NULL,
+    expires_at DATETIME NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
 `);
+
+import nodemailer from "nodemailer";
+
+let transporter: any = null;
+const getTransporter = () => {
+    if (!transporter) {
+        const user = process.env.GMAIL_USER;
+        const pass = process.env.GMAIL_APP_PASSWORD;
+        if (!user || !pass) {
+            throw new Error("GMAIL_USER and GMAIL_APP_PASSWORD must be set in environment variables");
+        }
+        transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: { user, pass },
+        });
+    }
+    return transporter;
+};
 
 const app = express();
 const PORT = 3000;
@@ -48,7 +77,7 @@ const saveSession = () => {
 };
 
 // Mock auth_api.php
-app.all("/auth_api.php", (req, res) => {
+app.all("/auth_api.php", async (req, res) => {
     const action = req.query.action;
     const method = req.method;
 
@@ -83,6 +112,55 @@ app.all("/auth_api.php", (req, res) => {
             mockSession = {};
             saveSession();
             return res.json({ success: true });
+        }
+
+        if (action === 'forgot-password') {
+            const { email } = req.body;
+            const user = db.prepare("SELECT * FROM users WHERE email = ?").get(email) as any;
+            if (!user) {
+                return res.json({ error: "Email not found" });
+            }
+
+            const code = Math.floor(100000 + Math.random() * 900000).toString();
+            const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString(); // 15 mins
+
+            db.prepare("DELETE FROM password_resets WHERE email = ?").run(email);
+            db.prepare("INSERT INTO password_resets (email, code, expires_at) VALUES (?, ?, ?)").run(email, code, expiresAt);
+
+            try {
+                const mailTransporter = getTransporter();
+                await mailTransporter.sendMail({
+                    from: process.env.GMAIL_USER,
+                    to: email,
+                    subject: "Password Reset Code",
+                    text: `Your password reset code is: ${code}. It expires in 15 minutes.`,
+                    html: `<p>Your password reset code is: <strong>${code}</strong>.</p><p>It expires in 15 minutes.</p>`
+                });
+                return res.json({ success: true });
+            } catch (err: any) {
+                console.error("Email error:", err);
+                return res.status(500).json({ error: "Failed to send email. Please check server logs." });
+            }
+        }
+
+        if (action === 'verify-code') {
+            const { email, code } = req.body;
+            const reset = db.prepare("SELECT * FROM password_resets WHERE email = ? AND code = ? AND expires_at > ?").get(email, code, new Date().toISOString()) as any;
+            if (reset) {
+                return res.json({ success: true });
+            }
+            return res.json({ error: "Invalid or expired code" });
+        }
+
+        if (action === 'reset-password') {
+            const { email, code, newPassword } = req.body;
+            const reset = db.prepare("SELECT * FROM password_resets WHERE email = ? AND code = ? AND expires_at > ?").get(email, code, new Date().toISOString()) as any;
+            if (reset) {
+                db.prepare("UPDATE users SET password = ? WHERE email = ?").run(newPassword, email);
+                db.prepare("DELETE FROM password_resets WHERE email = ?").run(email);
+                return res.json({ success: true });
+            }
+            return res.json({ error: "Invalid or expired code" });
         }
 
         res.status(400).json({ error: "Invalid action" });

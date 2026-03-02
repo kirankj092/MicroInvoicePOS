@@ -19,7 +19,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const forgotStatus = document.getElementById('forgotStatus');
 
     const forgotEmailStep = document.getElementById('forgotEmailStep');
+    const forgotCodeStep = document.getElementById('forgotCodeStep');
     const forgotPassStep = document.getElementById('forgotPassStep');
+    const verifyCodeBtn = document.getElementById('verifyCodeBtn');
     const resetPassBtn = document.getElementById('resetPassBtn');
 
     // Toggle between Login and Register
@@ -41,7 +43,9 @@ document.addEventListener('DOMContentLoaded', () => {
         loginSection.classList.add('hidden');
         forgotSection.classList.remove('hidden');
         forgotEmailStep.classList.remove('hidden');
+        forgotCodeStep.classList.add('hidden');
         forgotPassStep.classList.add('hidden');
+        forgotStatus.style.display = 'none';
     });
 
     backToLogin.addEventListener('click', (e) => {
@@ -147,13 +151,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Handle Forgot Password - Step 1: Verify Email
+    // Handle Forgot Password - Step 1: Send Code
     forgotForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const email = document.getElementById('forgotEmail').value;
 
         try {
-            const response = await fetch('auth_api.php?action=forgot_password', {
+            const response = await fetch('auth_api.php?action=forgot-password', {
                 method: 'POST',
                 body: JSON.stringify({ email }),
                 headers: { 'Content-Type': 'application/json' }
@@ -162,8 +166,39 @@ document.addEventListener('DOMContentLoaded', () => {
             const result = await response.json();
 
             if (result.success) {
-                showStatus(forgotStatus, result.message, 'success');
+                showStatus(forgotStatus, "Verification code sent to your email.", 'success');
                 forgotEmailStep.classList.add('hidden');
+                forgotCodeStep.classList.remove('hidden');
+            } else {
+                showStatus(forgotStatus, result.error, 'error');
+            }
+        } catch (error) {
+            showStatus(forgotStatus, 'Error: ' + error.message, 'error');
+        }
+    });
+
+    // Handle Forgot Password - Step 2: Verify Code
+    verifyCodeBtn.addEventListener('click', async () => {
+        const email = document.getElementById('forgotEmail').value;
+        const code = document.getElementById('forgotCode').value;
+
+        if (!code) {
+            showStatus(forgotStatus, 'Please enter the verification code.', 'error');
+            return;
+        }
+
+        try {
+            const response = await fetch('auth_api.php?action=verify-code', {
+                method: 'POST',
+                body: JSON.stringify({ email, code }),
+                headers: { 'Content-Type': 'application/json' }
+            });
+            
+            const result = await response.json();
+
+            if (result.success) {
+                showStatus(forgotStatus, "Code verified! Enter your new password.", 'success');
+                forgotCodeStep.classList.add('hidden');
                 forgotPassStep.classList.remove('hidden');
             } else {
                 showStatus(forgotStatus, result.error, 'error');
@@ -173,27 +208,28 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Handle Forgot Password - Step 2: Reset Password
+    // Handle Forgot Password - Step 3: Reset Password
     resetPassBtn.addEventListener('click', async () => {
         const email = document.getElementById('forgotEmail').value;
-        const new_password = document.getElementById('forgotNewPass').value;
+        const code = document.getElementById('forgotCode').value;
+        const newPassword = document.getElementById('forgotNewPass').value;
 
-        if (!new_password) {
+        if (!newPassword) {
             showStatus(forgotStatus, 'Please enter a new password.', 'error');
             return;
         }
 
         try {
-            const response = await fetch('auth_api.php?action=forgot_password', {
+            const response = await fetch('auth_api.php?action=reset-password', {
                 method: 'POST',
-                body: JSON.stringify({ email, new_password }),
+                body: JSON.stringify({ email, code, newPassword }),
                 headers: { 'Content-Type': 'application/json' }
             });
             
             const result = await response.json();
 
             if (result.success) {
-                showStatus(forgotStatus, result.message, 'success');
+                showStatus(forgotStatus, "Password reset successful! Redirecting to login...", 'success');
                 setTimeout(() => {
                     forgotSection.classList.add('hidden');
                     loginSection.classList.remove('hidden');

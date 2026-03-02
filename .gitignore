@@ -1,1 +1,6 @@
 db_config.php
+.env
+mock_session.json
+invoices.db
+node_modules/
+dist/

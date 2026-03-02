@@ -111,7 +111,14 @@
                         <label for="forgotEmail">Email Address</label>
                         <input type="email" id="forgotEmail" required placeholder="email@example.com">
                     </div>
-                    <button type="submit" class="btn-primary">VERIFY EMAIL</button>
+                    <button type="submit" class="btn-primary">SEND RESET CODE</button>
+                </div>
+                <div id="forgotCodeStep" class="hidden">
+                    <div class="input-group">
+                        <label for="forgotCode">Verification Code</label>
+                        <input type="text" id="forgotCode" placeholder="Enter 6-digit code">
+                    </div>
+                    <button type="button" id="verifyCodeBtn" class="btn-primary">VERIFY CODE</button>
                 </div>
                 <div id="forgotPassStep" class="hidden">
                     <div class="input-group">
