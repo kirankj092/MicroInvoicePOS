@@ -201,10 +201,9 @@ try {
         echo json_encode(["success" => true]);
         break;
 
-    case 'forgot_password':
+    case 'forgot-password':
         $data = getJsonInput();
         $email = $data['email'] ?? '';
-        $new_pass = $data['new_password'] ?? '';
 
         if (empty($email)) {
             echo json_encode(["error" => "Email is required."]);
@@ -218,25 +217,84 @@ try {
         $result = $stmt->get_result();
         
         if ($row = $result->fetch_assoc()) {
-            if (!empty($new_pass)) {
-                // Actually reset the password (for demo purposes)
-                $hashed_pass = password_hash($new_pass, PASSWORD_DEFAULT);
-                $update_stmt = $conn->prepare("UPDATE users SET password = ? WHERE id = ?");
-                $update_stmt->bind_param("si", $hashed_pass, $row['id']);
-                if ($update_stmt->execute()) {
-                    echo json_encode(["success" => true, "message" => "Password reset successfully."]);
+            $code = strval(rand(100000, 999999));
+            $expires_at = date('Y-m-d H:i:s', strtotime('+15 minutes'));
+
+            // Delete old codes
+            $del = $conn->prepare("DELETE FROM password_resets WHERE email = ?");
+            $del->bind_param("s", $email);
+            $del->execute();
+
+            // Insert new code
+            $ins = $conn->prepare("INSERT INTO password_resets (email, code, expires_at) VALUES (?, ?, ?)");
+            $ins->bind_param("sss", $email, $code, $expires_at);
+            
+            if ($ins->execute()) {
+                // Send Email
+                $subject = "Password Reset Code";
+                $message = "Your password reset code is: " . $code . ". It expires in 15 minutes.";
+                $headers = "From: " . ($gmail_user ?? 'no-reply@' . $_SERVER['HTTP_HOST']) . "\r\n";
+                $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
+                
+                $html_message = "<html><body><p>Your password reset code is: <strong>$code</strong>.</p><p>It expires in 15 minutes.</p></body></html>";
+                
+                // Note: On Hostinger, mail() usually works. For Gmail SMTP, PHPMailer is recommended.
+                if (@mail($email, $subject, $html_message, $headers)) {
+                    echo json_encode(["success" => true, "message" => "Code sent to your email."]);
                 } else {
-                    echo json_encode(["error" => "Failed to reset password."]);
+                    // Fallback for preview/local if mail() fails
+                    echo json_encode(["success" => true, "message" => "Code generated (Email delivery failed, check server logs).", "debug_code" => $code]);
                 }
-                $update_stmt->close();
             } else {
-                // Just verify email exists
-                echo json_encode(["success" => true, "message" => "Email verified. Please enter your new password."]);
+                echo json_encode(["error" => "Failed to generate reset code."]);
             }
         } else {
             echo json_encode(["error" => "Email not found."]);
         }
-        $stmt->close();
+        break;
+
+    case 'verify-code':
+        $data = getJsonInput();
+        $email = $data['email'] ?? '';
+        $code = $data['code'] ?? '';
+        $now = date('Y-m-d H:i:s');
+
+        $stmt = $conn->prepare("SELECT id FROM password_resets WHERE email = ? AND code = ? AND expires_at > ?");
+        $stmt->bind_param("sss", $email, $code, $now);
+        $stmt->execute();
+        if ($stmt->get_result()->fetch_assoc()) {
+            echo json_encode(["success" => true]);
+        } else {
+            echo json_encode(["error" => "Invalid or expired code."]);
+        }
+        break;
+
+    case 'reset-password':
+        $data = getJsonInput();
+        $email = $data['email'] ?? '';
+        $code = $data['code'] ?? '';
+        $new_pass = $data['newPassword'] ?? '';
+        $now = date('Y-m-d H:i:s');
+
+        $stmt = $conn->prepare("SELECT id FROM password_resets WHERE email = ? AND code = ? AND expires_at > ?");
+        $stmt->bind_param("sss", $email, $code, $now);
+        $stmt->execute();
+        
+        if ($stmt->get_result()->fetch_assoc()) {
+            $hashed_pass = password_hash($new_pass, PASSWORD_DEFAULT);
+            $update = $conn->prepare("UPDATE users SET password = ? WHERE email = ?");
+            $update->bind_param("ss", $hashed_pass, $email);
+            if ($update->execute()) {
+                $del = $conn->prepare("DELETE FROM password_resets WHERE email = ?");
+                $del->bind_param("s", $email);
+                $del->execute();
+                echo json_encode(["success" => true, "message" => "Password reset successfully."]);
+            } else {
+                echo json_encode(["error" => "Failed to update password."]);
+            }
+        } else {
+            echo json_encode(["error" => "Invalid or expired code."]);
+        }
         break;
 
     default:
