@@ -40,6 +40,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let editingId = null;
     let userProfile = null;
+    let allInvoices = [];
+    let currentPage = 1;
+    const pageSize = 10;
 
     // Security: Escape HTML to prevent XSS
     const escapeHTML = (str) => {
@@ -230,7 +233,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error('JSON Parse Error. Raw response:', responseText);
                 throw new Error("Server returned invalid data. Raw response: " + responseText.substring(0, 300));
             }
-            renderInvoices(invoices);
+            allInvoices = invoices;
+            currentPage = 1;
+            renderInvoices();
         } catch (error) {
             console.error('Error fetching invoices:', error);
             if (emptyState) {
@@ -241,13 +246,21 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Render Invoices
-    const renderInvoices = (invoices) => {
+    const renderInvoices = () => {
+        const invoiceList = document.getElementById('invoiceList');
+        const emptyState = document.getElementById('emptyState');
+        const paginationContainer = document.getElementById('paginationContainer');
+        const prevPageBtn = document.getElementById('prevPage');
+        const nextPageBtn = document.getElementById('nextPage');
+        const pageInfo = document.getElementById('pageInfo');
+
         invoiceList.innerHTML = '';
         
-        if (!invoices || !Array.isArray(invoices) || invoices.length === 0) {
+        if (!allInvoices || !Array.isArray(allInvoices) || allInvoices.length === 0) {
             emptyState.style.display = 'block';
-            if (invoices && invoices.error) {
-                emptyState.textContent = `Error: ${invoices.error}`;
+            paginationContainer.style.display = 'none';
+            if (allInvoices && allInvoices.error) {
+                emptyState.textContent = `Error: ${allInvoices.error}`;
             } else {
                 emptyState.textContent = 'No invoices recorded yet.';
             }
@@ -256,7 +269,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
         emptyState.style.display = 'none';
         
-        invoices.forEach(inv => {
+        // Calculate pagination
+        const totalPages = Math.ceil(allInvoices.length / pageSize);
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+
+        const startIndex = (currentPage - 1) * pageSize;
+        const endIndex = startIndex + pageSize;
+        const paginatedInvoices = allInvoices.slice(startIndex, endIndex);
+
+        // Update Pagination Controls
+        if (allInvoices.length > pageSize) {
+            paginationContainer.style.display = 'flex';
+            pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+            prevPageBtn.disabled = currentPage === 1;
+            nextPageBtn.disabled = currentPage === totalPages;
+        } else {
+            paginationContainer.style.display = 'none';
+        }
+        
+        paginatedInvoices.forEach(inv => {
             const row = document.createElement('tr');
             const date = new Date(inv.created_at).toLocaleDateString();
             
@@ -292,21 +324,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Add event listeners to buttons
         document.querySelectorAll('.edit-btn').forEach(btn => {
-            btn.addEventListener('click', () => handleEdit(btn.dataset.id, invoices));
+            btn.addEventListener('click', () => handleEdit(btn.dataset.id, allInvoices));
         });
         document.querySelectorAll('.delete-btn').forEach(btn => {
             btn.addEventListener('click', () => handleDelete(btn.dataset.id));
         });
         document.querySelectorAll('.preview-btn').forEach(btn => {
-            btn.addEventListener('click', () => handlePreview(btn.dataset.id, invoices));
+            btn.addEventListener('click', () => handlePreview(btn.dataset.id, allInvoices));
         });
         document.querySelectorAll('.download-btn').forEach(btn => {
-            btn.addEventListener('click', () => handleDownload(btn.dataset.id, invoices));
+            btn.addEventListener('click', () => handleDownload(btn.dataset.id, allInvoices));
         });
         document.querySelectorAll('.share-btn').forEach(btn => {
-            btn.addEventListener('click', () => handleShare(btn.dataset.id, invoices));
+            btn.addEventListener('click', () => handleShare(btn.dataset.id, allInvoices));
         });
     };
+
+    // Pagination Button Listeners
+    document.getElementById('prevPage').addEventListener('click', () => {
+        if (currentPage > 1) {
+            currentPage--;
+            renderInvoices();
+        }
+    });
+
+    document.getElementById('nextPage').addEventListener('click', () => {
+        const totalPages = Math.ceil(allInvoices.length / pageSize);
+        if (currentPage < totalPages) {
+            currentPage++;
+            renderInvoices();
+        }
+    });
 
     // PNG Generation Logic
     const generateInvoiceCanvas = async (invoice) => {

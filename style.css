@@ -626,6 +626,65 @@ td {
     font-size: 0.75rem;
 }
 
+/* Pagination Styles */
+.pagination-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    border-top: 1px solid var(--border);
+    background: #f8fafc;
+}
+
+.btn-pagination {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--border);
+    background: white;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-pagination:hover:not(:disabled) {
+    background: #f1f5f9;
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.btn-pagination:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.page-info {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+@media (max-width: 640px) {
+    .pagination-container {
+        gap: 0.5rem;
+        padding: 0.75rem;
+    }
+    
+    .btn-pagination {
+        padding: 0.4rem 0.6rem;
+        font-size: 0.75rem;
+    }
+    
+    .page-info {
+        font-size: 0.75rem;
+    }
+}
+
 @media (max-width: 768px) {
     .content-grid {
         margin: 0 auto;
@@ -780,6 +839,19 @@ td {
 
     .section-header {
         margin-bottom: 0.2rem;
+    }
+
+    .history-section .card-header {
+        background-color: #1e4e8c !important;
+        color: white !important;
+    }
+
+    .history-section .card-header h2 {
+        color: white !important;
+    }
+
+    .history-section .card-header svg {
+        color: white !important;
     }
 
     .btn-add-item {
