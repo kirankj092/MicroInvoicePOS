@@ -14,10 +14,19 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
     customer_name TEXT NOT NULL,
-    item_name TEXT NOT NULL,
-    price REAL NOT NULL,
-    quantity INTEGER NOT NULL,
+    items TEXT,
     total REAL NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS customers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    phone TEXT NOT NULL,
+    email TEXT,
+    address TEXT,
+    dob TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 
@@ -204,25 +213,54 @@ app.all("/api.php", (req, res) => {
     try {
         if (action === 'read') {
             const invoices = db.prepare("SELECT * FROM invoices WHERE user_id = ? ORDER BY created_at DESC").all(mockSession.user_id);
-            return res.json(invoices);
+            // Parse items JSON for each invoice
+            const parsedInvoices = invoices.map((inv: any) => ({
+                ...inv,
+                items: inv.items ? JSON.parse(inv.items) : []
+            }));
+            return res.json(parsedInvoices);
+        }
+
+        if (action === 'customers_read') {
+            const customers = db.prepare("SELECT * FROM customers WHERE user_id = ? ORDER BY name ASC").all(mockSession.user_id);
+            return res.json(customers);
         }
 
         if (method === 'POST') {
             const data = req.body;
 
             if (action === 'create') {
-                const { customer_name, item_name, price, quantity } = data;
-                const total = price * quantity;
-                const stmt = db.prepare("INSERT INTO invoices (user_id, customer_name, item_name, price, quantity, total) VALUES (?, ?, ?, ?, ?, ?)");
-                const result = stmt.run(mockSession.user_id, customer_name, item_name, price, quantity, total);
+                const { customer_name, items, total } = data;
+                const stmt = db.prepare("INSERT INTO invoices (user_id, customer_name, items, total) VALUES (?, ?, ?, ?)");
+                const result = stmt.run(mockSession.user_id, customer_name, JSON.stringify(items), total);
                 return res.json({ success: true, id: result.lastInsertRowid });
             }
 
             if (action === 'update') {
-                const { id, customer_name, item_name, price, quantity } = data;
-                const total = price * quantity;
-                const stmt = db.prepare("UPDATE invoices SET customer_name=?, item_name=?, price=?, quantity=?, total=? WHERE id=? AND user_id=?");
-                stmt.run(customer_name, item_name, price, quantity, total, id, mockSession.user_id);
+                const { id, customer_name, items, total } = data;
+                const stmt = db.prepare("UPDATE invoices SET customer_name=?, items=?, total=? WHERE id=? AND user_id=?");
+                stmt.run(customer_name, JSON.stringify(items), total, id, mockSession.user_id);
+                return res.json({ success: true });
+            }
+
+            if (action === 'customer_create') {
+                const { name, phone, email, address, dob } = data;
+                const stmt = db.prepare("INSERT INTO customers (user_id, name, phone, email, address, dob) VALUES (?, ?, ?, ?, ?, ?)");
+                const result = stmt.run(mockSession.user_id, name, phone, email, address, dob);
+                return res.json({ success: true, id: result.lastInsertRowid });
+            }
+
+            if (action === 'customer_update') {
+                const { id, name, phone, email, address, dob } = data;
+                const stmt = db.prepare("UPDATE customers SET name=?, phone=?, email=?, address=?, dob=? WHERE id=? AND user_id=?");
+                stmt.run(name, phone, email, address, dob, id, mockSession.user_id);
+                return res.json({ success: true });
+            }
+
+            if (action === 'customer_delete') {
+                const { id } = data;
+                const stmt = db.prepare("DELETE FROM customers WHERE id=? AND user_id=?");
+                stmt.run(id, mockSession.user_id);
                 return res.json({ success: true });
             }
 

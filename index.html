@@ -147,12 +147,13 @@
                                     <h2>New Invoice</h2>
                                 </div>
                                 <form id="invoiceForm" class="card-body">
-                                    <div class="input-group">
+                                    <div class="input-group" style="position: relative;">
                                         <label for="customerName">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                                             Customer Name
                                         </label>
-                                        <input type="text" id="customerName" required placeholder="e.g. John Doe">
+                                        <input type="text" id="customerName" required placeholder="e.g. John Doe" autocomplete="off">
+                                        <div id="customerSuggestions" class="suggestions-box"></div>
                                     </div>
 
                                     <div class="items-section">
@@ -248,10 +249,76 @@
 
                 <section id="customersSection" class="content-section">
                     <div class="section-header-main">
-                        <h2>Customers</h2>
+                        <h2>Customer Management</h2>
+                        <button id="addCustomerBtn" class="btn-primary" style="width: auto; padding: 8px 16px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                            Add Customer
+                        </button>
                     </div>
-                    <div class="placeholder-content">
-                        <p>Customer management functionality coming soon...</p>
+                    
+                    <div class="content-grid">
+                        <section class="form-section" id="customerFormSection" style="display: none;">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h2 id="customerFormTitle">New Customer</h2>
+                                </div>
+                                <form id="customerForm" class="card-body">
+                                    <div class="input-group">
+                                        <label>Full Name</label>
+                                        <input type="text" id="custName" required placeholder="e.g. John Doe">
+                                    </div>
+                                    <div class="input-row">
+                                        <div class="input-group">
+                                            <label>Phone Number</label>
+                                            <input type="text" id="custPhone" required placeholder="e.g. 9876543210">
+                                        </div>
+                                        <div class="input-group">
+                                            <label>Email Address</label>
+                                            <input type="email" id="custEmail" placeholder="e.g. john@example.com">
+                                        </div>
+                                    </div>
+                                    <div class="input-group">
+                                        <label>Address</label>
+                                        <textarea id="custAddress" rows="2" placeholder="Customer Address"></textarea>
+                                    </div>
+                                    <div class="input-group">
+                                        <label>Date of Birth</label>
+                                        <input type="date" id="custDob">
+                                    </div>
+                                    <div class="form-actions">
+                                        <button type="submit" class="btn-primary" id="saveCustomerBtn">SAVE CUSTOMER</button>
+                                        <button type="button" class="btn-secondary" id="cancelCustomerBtn">CANCEL</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </section>
+
+                        <section class="history-section" style="grid-column: span 2;">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h2>Customer List</h2>
+                                </div>
+                                <div class="table-container">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>Name</th>
+                                                <th>Phone</th>
+                                                <th>Email</th>
+                                                <th>Address</th>
+                                                <th class="text-right">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="customerList">
+                                            <!-- Customers will be injected here -->
+                                        </tbody>
+                                    </table>
+                                    <div id="customerEmptyState" class="empty-state">
+                                        No customers added yet.
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
                     </div>
                 </section>
 
