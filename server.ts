@@ -47,6 +47,31 @@ db.exec(`
   );
 `);
 
+// Migration: Ensure customers table and invoices schema are up to date
+try {
+    db.exec(`
+        CREATE TABLE IF NOT EXISTS customers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            name TEXT NOT NULL,
+            phone TEXT NOT NULL,
+            email TEXT,
+            address TEXT,
+            dob TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+    `);
+    
+    const tableInfo = db.prepare("PRAGMA table_info(invoices)").all() as any[];
+    const hasItems = tableInfo.some(col => col.name === 'items');
+    if (!hasItems) {
+        console.log("Migrating invoices table: adding items column");
+        db.exec("ALTER TABLE invoices ADD COLUMN items TEXT");
+    }
+} catch (e) {
+    console.error("Database migration error:", e);
+}
+
 import nodemailer from "nodemailer";
 
 let transporter: any = null;

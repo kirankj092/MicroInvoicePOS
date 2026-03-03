@@ -504,16 +504,23 @@ document.addEventListener('DOMContentLoaded', () => {
                     body: JSON.stringify(data),
                     headers: { 'Content-Type': 'application/json' }
                 });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(errorText || `Server error: ${response.status}`);
+                }
+
                 const result = await response.json();
                 if (result.success) {
                     showStatus(editingCustomerId ? 'Customer updated!' : 'Customer added!', 'success');
                     if (customerFormSection) customerFormSection.style.display = 'none';
                     fetchCustomers();
                 } else {
-                    showStatus('Error: ' + result.error, 'error');
+                    showStatus('Error: ' + (result.error || 'Unknown error'), 'error');
                 }
             } catch (error) {
-                showStatus('Error saving customer', 'error');
+                console.error('Error saving customer:', error);
+                showStatus('Error saving customer: ' + error.message, 'error');
             }
         });
     }
