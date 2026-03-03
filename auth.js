@@ -156,6 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
             showStatus(regStatus, 'Error: ' + error.message, 'error');
         }
     });
+    }
 
     // Handle Login
     if (loginForm) {
@@ -223,6 +224,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (loginBtn) loginBtn.disabled = false;
         }
     });
+    }
 
     // Handle Forgot Password - Step 1: Send Code
     if (forgotForm) {
@@ -252,6 +254,7 @@ document.addEventListener('DOMContentLoaded', () => {
             showStatus(forgotStatus, 'Error: ' + error.message, 'error');
         }
     });
+    }
 
     // Handle Forgot Password - Step 2: Verify Code
     if (verifyCodeBtn) {
@@ -288,6 +291,7 @@ document.addEventListener('DOMContentLoaded', () => {
             showStatus(forgotStatus, 'Error: ' + error.message, 'error');
         }
     });
+    }
 
     // Handle Forgot Password - Step 3: Reset Password
     if (resetPassBtn) {
@@ -328,5 +332,6 @@ document.addEventListener('DOMContentLoaded', () => {
             showStatus(forgotStatus, 'Error: ' + error.message, 'error');
         }
     });
+    }
 
 });
