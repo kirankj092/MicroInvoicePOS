@@ -19,6 +19,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const loginForm = document.getElementById('loginForm');
     const registerForm = document.getElementById('registerForm');
+    
+    // Cookie Check for Mobile
+    if (!navigator.cookieEnabled) {
+        if (loginStatus) showStatus(loginStatus, "Error: Cookies are disabled in your browser. Login will not work.", "error");
+        if (regStatus) showStatus(regStatus, "Error: Cookies are disabled in your browser.", "error");
+    }
     const forgotForm = document.getElementById('forgotForm');
     const loginStatus = document.getElementById('loginStatus');
     const regStatus = document.getElementById('regStatus');
@@ -88,7 +94,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch('auth_api.php?action=register', {
                 method: 'POST',
                 body: JSON.stringify(data),
-                headers: { 'Content-Type': 'application/json' }
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include'
             });
             
             if (!response.ok) {
@@ -134,20 +141,23 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const loginUser = document.getElementById('loginUser');
             const loginPass = document.getElementById('loginPass');
+            const loginBtn = loginForm.querySelector('button[type="submit"]');
             
             if (!loginUser || !loginPass) return;
+            if (loginBtn) loginBtn.disabled = true;
 
             const data = {
                 username: loginUser.value,
                 password: loginPass.value
             };
 
-        try {
-            const response = await fetch('auth_api.php?action=login', {
-                method: 'POST',
-                body: JSON.stringify(data),
-                headers: { 'Content-Type': 'application/json' }
-            });
+            try {
+                const response = await fetch('auth_api.php?action=login', {
+                    method: 'POST',
+                    body: JSON.stringify(data),
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include'
+                });
 
             if (!response.ok) {
                 let errorMsg = 'Server Error ' + response.status;
@@ -176,13 +186,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (result.success) {
                 showStatus(loginStatus, 'Login successful! Redirecting...', 'success');
-                setTimeout(() => window.location.href = 'index.html', 1000);
+                // Small delay to ensure cookies are saved on mobile
+                setTimeout(() => {
+                    window.location.replace('index.html');
+                }, 500);
             } else {
                 showStatus(loginStatus, result.error, 'error');
+                if (loginBtn) loginBtn.disabled = false;
             }
         } catch (error) {
             console.error('Login error:', error);
             showStatus(loginStatus, 'Error: ' + error.message, 'error');
+            if (loginBtn) loginBtn.disabled = false;
         }
     });
 

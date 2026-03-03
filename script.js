@@ -120,7 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Fetch User Info & Profile
     const fetchUserInfo = async () => {
         try {
-            const response = await fetch('auth_api.php?action=check');
+            const response = await fetch('auth_api.php?action=check', { credentials: 'include' });
             if (!response.ok) {
                 try {
                     const errorData = await response.json();
@@ -135,7 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 userProfile = data.profile;
                 updateUIWithProfile(userProfile);
             } else {
-                window.location.href = 'auth.html';
+                window.location.replace('auth.html');
             }
         } catch (error) {
             console.error("Auth check failed:", error);
@@ -387,11 +387,11 @@ document.addEventListener('DOMContentLoaded', () => {
         logoutBtn.addEventListener('click', async () => {
             if (!confirm('Are you sure you want to logout?')) return;
             try {
-                await fetch('auth_api.php?action=logout');
-                window.location.href = 'auth.html';
+                await fetch('auth_api.php?action=logout', { credentials: 'include' });
+                window.location.replace('auth.html');
             } catch (error) {
                 console.error("Logout failed:", error);
-                window.location.href = 'auth.html';
+                window.location.replace('auth.html');
             }
         });
     }
@@ -400,7 +400,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const fetchCustomers = async () => {
         try {
-            const response = await fetch('api.php?action=customers_read');
+            const response = await fetch('api.php?action=customers_read', { credentials: 'include' });
             if (response.status === 401) {
                 window.location.href = 'auth.html';
                 return;
@@ -590,7 +590,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const fetchInvoices = async () => {
         try {
-            const response = await fetch('api.php?action=read');
+            const response = await fetch('api.php?action=read', { credentials: 'include' });
             if (response.status === 401) {
                 window.location.href = 'auth.html';
                 return;
