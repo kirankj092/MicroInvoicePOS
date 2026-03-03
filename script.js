@@ -5,6 +5,8 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log("Micro Invoice POS Initializing...");
+    
+    // Check for html2canvas
     if (typeof html2canvas === 'undefined') {
         console.warn("html2canvas not loaded yet. Retrying in 1s...");
         setTimeout(() => {
@@ -15,6 +17,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }, 1000);
     }
+
+    // DOM Elements
     const form = document.getElementById('invoiceForm');
     const itemsContainer = document.getElementById('itemsContainer');
     const addItemBtn = document.getElementById('addItemBtn');
@@ -50,6 +54,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentPage = 1;
     const pageSize = 10;
 
+    // --- Utility Functions ---
+
     // Security: Escape HTML to prevent XSS
     const escapeHTML = (str) => {
         if (!str) return "";
@@ -61,6 +67,36 @@ document.addEventListener('DOMContentLoaded', () => {
             .replace(/'/g, "&#039;");
     };
 
+    // Handle Image Previews & Base64 Conversion
+    const handleImageUpload = (input, previewId) => {
+        if (!input) return;
+        input.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const preview = document.getElementById(previewId);
+                    if (preview) preview.innerHTML = `<img src="${event.target.result}" alt="Preview">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    };
+
+    // Show Status Message
+    const showStatus = (message, type) => {
+        if (!statusMessage) return;
+        statusMessage.textContent = message;
+        statusMessage.className = `status-message ${type}`;
+        statusMessage.style.display = 'block';
+        
+        setTimeout(() => {
+            statusMessage.style.display = 'none';
+        }, 3000);
+    };
+
+    // --- Core Logic ---
+
     // Fetch User Info & Profile
     const fetchUserInfo = async () => {
         try {
@@ -69,37 +105,38 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.authenticated) {
                 userProfile = data.profile;
                 updateUIWithProfile(userProfile);
+            } else {
+                window.location.href = 'auth.html';
             }
         } catch (error) {
-            console.log("Auth check skipped in preview");
+            console.error("Auth check failed:", error);
         }
     };
 
     const updateUIWithProfile = (profile) => {
-        if (!profile) {
-            console.log("No profile data found in check response.");
-            return;
-        }
+        if (!profile) return;
         
         const name = profile.shop_name || "Micro Invoice POS";
         if (shopNameDisplay) shopNameDisplay.textContent = name;
         if (footerShopName) footerShopName.textContent = name;
         
-        // Update main profile section if it exists
-        const shopNameMain = document.getElementById('shopNameMain');
-        const shopAddressMain = document.getElementById('shopAddressMain');
-        const shopPhoneMain = document.getElementById('shopPhoneMain');
-        const shopGstinMain = document.getElementById('shopGstinMain');
-        const shopEmailMain = document.getElementById('shopEmailMain');
+        // Update main profile section inputs
+        const fields = {
+            'shopNameMain': profile.shop_name,
+            'shopAddressMain': profile.address,
+            'shopPhoneMain': profile.phone,
+            'shopGstinMain': profile.gstin,
+            'shopEmailMain': profile.email
+        };
+
+        for (const [id, val] of Object.entries(fields)) {
+            const el = document.getElementById(id);
+            if (el) el.value = val || '';
+        }
+        
         const logoPreviewMain = document.getElementById('logoPreviewMain');
         const signaturePreviewMain = document.getElementById('signaturePreviewMain');
 
-        if (shopNameMain) shopNameMain.value = profile.shop_name || '';
-        if (shopAddressMain) shopAddressMain.value = profile.address || '';
-        if (shopPhoneMain) shopPhoneMain.value = profile.phone || '';
-        if (shopGstinMain) shopGstinMain.value = profile.gstin || '';
-        if (shopEmailMain) shopEmailMain.value = profile.email || '';
-        
         if (logoPreviewMain && profile.shop_logo) {
             logoPreviewMain.innerHTML = `<img src="${profile.shop_logo}" alt="Logo">`;
         }
@@ -117,7 +154,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (defaultIconBox) defaultIconBox.style.display = 'flex';
             if (shopTagline) shopTagline.style.display = 'block';
         }
-        console.log("UI updated with profile:", name);
     };
 
     // Navigation Logic
@@ -131,12 +167,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (targetSection) targetSection.classList.add('active');
         if (targetNav) targetNav.classList.add('active');
 
-        // On mobile, close sidebar after clicking
-        if (window.innerWidth <= 768) {
+        if (window.innerWidth <= 768 && sidebar) {
             sidebar.classList.remove('open');
         }
 
-        // Special logic for sections
         if (sectionId === 'dashboard') {
             updateDashboardStats();
         }
@@ -165,13 +199,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Close sidebar when clicking outside on mobile
     document.addEventListener('click', (e) => {
-        if (window.innerWidth <= 768 && 
-            !sidebar.contains(e.target) && 
-            !menuToggle.contains(e.target) && 
-            sidebar.classList.contains('open')) {
-            sidebar.classList.remove('open');
+        if (window.innerWidth <= 768 && sidebar && sidebar.classList.contains('open')) {
+            if (!sidebar.contains(e.target) && !menuToggle.contains(e.target)) {
+                sidebar.classList.remove('open');
+            }
         }
     });
 
@@ -234,27 +266,25 @@ document.addEventListener('DOMContentLoaded', () => {
     if (sidebarLogout) {
         sidebarLogout.addEventListener('click', (e) => {
             e.preventDefault();
-            logoutBtn.click();
+            if (logoutBtn) logoutBtn.click();
         });
     }
 
     // Profile Modal Logic
     if (profileBtn) {
-        console.log("Profile button initialized");
         profileBtn.addEventListener('click', () => {
-            console.log("Profile button clicked");
             if (userProfile) {
-                const shopNameInput = document.getElementById('shopName');
-                const shopAddressInput = document.getElementById('shopAddress');
-                const shopPhoneInput = document.getElementById('shopPhone');
-                const shopGstinInput = document.getElementById('shopGstin');
-                const shopEmailInput = document.getElementById('shopEmail');
-
-                if (shopNameInput) shopNameInput.value = userProfile.shop_name || '';
-                if (shopAddressInput) shopAddressInput.value = userProfile.address || '';
-                if (shopPhoneInput) shopPhoneInput.value = userProfile.phone || '';
-                if (shopGstinInput) shopGstinInput.value = userProfile.gstin || '';
-                if (shopEmailInput) shopEmailInput.value = userProfile.email || '';
+                const fields = {
+                    'shopName': userProfile.shop_name,
+                    'shopAddress': userProfile.address,
+                    'shopPhone': userProfile.phone,
+                    'shopGstin': userProfile.gstin,
+                    'shopEmail': userProfile.email
+                };
+                for (const [id, val] of Object.entries(fields)) {
+                    const el = document.getElementById(id);
+                    if (el) el.value = val || '';
+                }
                 
                 const logoPreview = document.getElementById('logoPreview');
                 const signaturePreview = document.getElementById('signaturePreview');
@@ -268,13 +298,11 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (profileModal) profileModal.style.display = 'block';
         });
-    } else {
-        console.error("Profile button NOT found in DOM!");
     }
 
     if (closeProfileModal) {
         closeProfileModal.addEventListener('click', () => {
-            profileModal.style.display = 'none';
+            if (profileModal) profileModal.style.display = 'none';
         });
     }
 
@@ -282,24 +310,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target === profileModal) profileModal.style.display = 'none';
     });
 
-    // Handle Image Previews & Base64 Conversion
-    const handleImageUpload = (input, previewId) => {
-        input.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    document.getElementById(previewId).innerHTML = `<img src="${event.target.result}" alt="Preview">`;
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-    };
-
+    // Handle Image Uploads for Modal
     handleImageUpload(document.getElementById('shopLogoInput'), 'logoPreview');
     handleImageUpload(document.getElementById('signatureInput'), 'signaturePreview');
 
-    // Save Profile
+    // Save Profile from Modal
     if (profileForm) {
         profileForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -325,7 +340,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const result = await response.json();
                 if (result.success) {
                     showStatus('Profile updated!', 'success');
-                    profileModal.style.display = 'none';
+                    if (profileModal) profileModal.style.display = 'none';
                     fetchUserInfo();
                 } else {
                     showStatus('Error: ' + result.error, 'error');
@@ -350,7 +365,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Fetch Invoices (Read)
+    // --- Invoice Management ---
+
     const fetchInvoices = async () => {
         try {
             const response = await fetch('api.php?action=read');
@@ -358,27 +374,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.location.href = 'auth.html';
                 return;
             }
-            if (!response.ok) {
-                let errorMsg = 'Server Error ' + response.status;
-                try {
-                    const errorData = await response.json();
-                    errorMsg = errorData.error || errorData.details || errorMsg;
-                } catch (e) {
-                    // If not JSON, get raw text
-                    const rawText = await response.text();
-                    if (rawText) errorMsg = rawText.substring(0, 200);
-                }
-                throw new Error(errorMsg);
-            }
+            if (!response.ok) throw new Error('Server Error ' + response.status);
             
-            let invoices;
-            const responseText = await response.text();
-            try {
-                invoices = JSON.parse(responseText);
-            } catch (e) {
-                console.error('JSON Parse Error. Raw response:', responseText);
-                throw new Error("Server returned invalid data. Raw response: " + responseText.substring(0, 300));
-            }
+            const invoices = await response.json();
             allInvoices = invoices;
             currentPage = 1;
             renderInvoices();
@@ -387,36 +385,24 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Error fetching invoices:', error);
             if (emptyState) {
                 emptyState.style.display = 'block';
-                emptyState.textContent = 'Connection Error: ' + error.message + ' (Try Ctrl+F5 to clear cache)';
+                emptyState.textContent = 'Connection Error: ' + error.message;
             }
         }
     };
 
-    // Render Invoices
     const renderInvoices = () => {
-        const invoiceList = document.getElementById('invoiceList');
-        const emptyState = document.getElementById('emptyState');
-        const paginationContainer = document.getElementById('paginationContainer');
-        const prevPageBtn = document.getElementById('prevPage');
-        const nextPageBtn = document.getElementById('nextPage');
-        const pageInfo = document.getElementById('pageInfo');
-
+        if (!invoiceList) return;
         invoiceList.innerHTML = '';
         
-        if (!allInvoices || !Array.isArray(allInvoices) || allInvoices.length === 0) {
-            emptyState.style.display = 'block';
-            paginationContainer.style.display = 'none';
-            if (allInvoices && allInvoices.error) {
-                emptyState.textContent = `Error: ${allInvoices.error}`;
-            } else {
-                emptyState.textContent = 'No invoices recorded yet.';
-            }
+        if (!allInvoices || allInvoices.length === 0) {
+            if (emptyState) emptyState.style.display = 'block';
+            const paginationContainer = document.getElementById('paginationContainer');
+            if (paginationContainer) paginationContainer.style.display = 'none';
             return;
         }
 
-        emptyState.style.display = 'none';
+        if (emptyState) emptyState.style.display = 'none';
         
-        // Calculate pagination
         const totalPages = Math.ceil(allInvoices.length / pageSize);
         if (currentPage > totalPages) currentPage = totalPages;
         if (currentPage < 1) currentPage = 1;
@@ -425,20 +411,23 @@ document.addEventListener('DOMContentLoaded', () => {
         const endIndex = startIndex + pageSize;
         const paginatedInvoices = allInvoices.slice(startIndex, endIndex);
 
-        // Update Pagination Controls
+        const paginationContainer = document.getElementById('paginationContainer');
+        const prevPageBtn = document.getElementById('prevPage');
+        const nextPageBtn = document.getElementById('nextPage');
+        const pageInfo = document.getElementById('pageInfo');
+
         if (allInvoices.length > pageSize) {
-            paginationContainer.style.display = 'flex';
-            pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
-            prevPageBtn.disabled = currentPage === 1;
-            nextPageBtn.disabled = currentPage === totalPages;
+            if (paginationContainer) paginationContainer.style.display = 'flex';
+            if (pageInfo) pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+            if (prevPageBtn) prevPageBtn.disabled = currentPage === 1;
+            if (nextPageBtn) nextPageBtn.disabled = currentPage === totalPages;
         } else {
-            paginationContainer.style.display = 'none';
+            if (paginationContainer) paginationContainer.style.display = 'none';
         }
         
         paginatedInvoices.forEach(inv => {
             const row = document.createElement('tr');
             const date = new Date(inv.created_at).toLocaleDateString();
-            
             const itemsSummary = inv.items && inv.items.length > 0 
                 ? (inv.items.length === 1 ? escapeHTML(inv.items[0].item_name) : `${escapeHTML(inv.items[0].item_name)} (+${inv.items.length - 1} more)`)
                 : 'No items';
@@ -487,36 +476,40 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    // Pagination Button Listeners
-    document.getElementById('prevPage').addEventListener('click', () => {
-        if (currentPage > 1) {
-            currentPage--;
-            renderInvoices();
-        }
-    });
+    const prevPageBtn = document.getElementById('prevPage');
+    if (prevPageBtn) {
+        prevPageBtn.addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                renderInvoices();
+            }
+        });
+    }
 
-    document.getElementById('nextPage').addEventListener('click', () => {
-        const totalPages = Math.ceil(allInvoices.length / pageSize);
-        if (currentPage < totalPages) {
-            currentPage++;
-            renderInvoices();
-        }
-    });
+    const nextPageBtn = document.getElementById('nextPage');
+    if (nextPageBtn) {
+        nextPageBtn.addEventListener('click', () => {
+            const totalPages = Math.ceil(allInvoices.length / pageSize);
+            if (currentPage < totalPages) {
+                currentPage++;
+                renderInvoices();
+            }
+        });
+    }
 
-    // PNG Generation Logic
+    // --- PNG Generation ---
+
     const generateInvoiceCanvas = async (invoice) => {
         const tpl = document.getElementById('invoiceTemplate');
+        if (!tpl) throw new Error("Template not found");
         
-        // Populate Shop Info
-        const shopName = userProfile?.shop_name || "Micro Invoice";
-        document.getElementById('tpl-shop-name').textContent = shopName;
+        document.getElementById('tpl-shop-name').textContent = userProfile?.shop_name || "Micro Invoice";
         document.getElementById('tpl-shop-address').textContent = userProfile?.address || "";
         document.getElementById('tpl-shop-contact').textContent = 
             (userProfile?.phone ? `Phone: ${userProfile.phone}` : "") + 
             (userProfile?.email ? ` | Email: ${userProfile.email}` : "");
         document.getElementById('tpl-shop-gstin').textContent = userProfile?.gstin ? `GSTIN: ${userProfile.gstin}` : "";
 
-        // Handle Logo
         const tplLogoContainer = document.getElementById('tpl-logo-container');
         const tplLogo = document.getElementById('tpl-logo');
         if (userProfile?.shop_logo) {
@@ -526,7 +519,6 @@ document.addEventListener('DOMContentLoaded', () => {
             tplLogoContainer.style.display = 'none';
         }
 
-        // Handle Signature
         const tplSigContainer = document.getElementById('tpl-signature-container');
         const tplSig = document.getElementById('tpl-signature');
         if (userProfile?.signature) {
@@ -568,12 +560,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    // Handle Preview
     const handlePreview = async (id, invoices, directData = null) => {
         const inv = directData || invoices.find(i => i.id == id);
         if (!inv) return;
 
-        // Open window immediately to avoid popup blocker
         const newTab = window.open('', '_blank');
         if (!newTab) {
             showStatus('Popup blocked! Please allow popups.', 'error');
@@ -585,7 +575,6 @@ document.addEventListener('DOMContentLoaded', () => {
             showStatus('Generating preview...', 'success');
             const canvas = await generateInvoiceCanvas(inv);
             const imgData = canvas.toDataURL('image/png');
-            
             newTab.document.body.innerHTML = `<img src="${imgData}" style="max-width: 100%; height: auto; display: block; margin: 0 auto; box-shadow: 0 0 20px rgba(0,0,0,0.1);">`;
             newTab.document.title = `Invoice Preview - ${inv.customer_name}`;
         } catch (error) {
@@ -594,7 +583,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Handle Download
     const handleDownload = async (id, invoices, directData = null) => {
         const inv = directData || invoices.find(i => i.id == id);
         if (!inv) return;
@@ -611,7 +599,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Handle Share
     const handleShare = async (id, invoices, directData = null) => {
         const inv = directData || invoices.find(i => i.id == id);
         if (!inv) return;
@@ -619,7 +606,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const itemsText = inv.items ? inv.items.map(i => `${i.item_name} (x${i.quantity})`).join(', ') : 'No items';
         const shareData = {
             title: `Invoice #${inv.id}`,
-            text: `Invoice for ${inv.customer_name}\nItems: ${itemsText}\nTotal: $${parseFloat(inv.total).toFixed(2)}\nDate: ${new Date(inv.created_at).toLocaleDateString()}`,
+            text: `Invoice for ${inv.customer_name}\nItems: ${itemsText}\nTotal: ₹${parseFloat(inv.total).toFixed(2)}\nDate: ${new Date(inv.created_at).toLocaleDateString()}`,
             url: window.location.href
         };
 
@@ -627,18 +614,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (navigator.share) {
                 await navigator.share(shareData);
             } else {
-                // Fallback: Copy to clipboard
                 await navigator.clipboard.writeText(shareData.text);
                 showStatus('Details copied to clipboard!', 'success');
             }
         } catch (error) {
-            if (error.name !== 'AbortError') {
-                showStatus('Error sharing invoice', 'error');
-            }
+            if (error.name !== 'AbortError') showStatus('Error sharing invoice', 'error');
         }
     };
 
-    // Handle Edit (Pre-fill form)
     const handleEdit = (id, invoices) => {
         const inv = invoices.find(i => i.id == id);
         if (!inv) return;
@@ -646,26 +629,28 @@ document.addEventListener('DOMContentLoaded', () => {
         editingId = id;
         document.getElementById('customerName').value = inv.customer_name;
         
-        // Clear and refill items
-        itemsContainer.innerHTML = '';
-        if (inv.items && inv.items.length > 0) {
-            inv.items.forEach(item => addItemRow(item));
-        } else {
-            addItemRow();
+        if (itemsContainer) {
+            itemsContainer.innerHTML = '';
+            if (inv.items && inv.items.length > 0) {
+                inv.items.forEach(item => addItemRow(item));
+            } else {
+                addItemRow();
+            }
         }
         
         updateTotal();
-        saveBtn.innerHTML = `
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-            UPDATE INVOICE
-        `;
+        if (saveBtn) {
+            saveBtn.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                UPDATE INVOICE
+            `;
+        }
+        switchSection('sales');
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    // Handle Delete
     const handleDelete = async (id) => {
         if (!confirm('Are you sure you want to delete this invoice?')) return;
-
         try {
             const response = await fetch('api.php?action=delete', {
                 method: 'POST',
@@ -682,14 +667,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Add Item Row
-    const addItemRow = (data = null) => {
-        if (!itemsContainer) {
-            console.error("itemsContainer not found!");
-            return;
-        }
+    // --- Form Logic ---
 
-        // Collapse all existing rows
+    const addItemRow = (data = null) => {
+        if (!itemsContainer) return;
+
         document.querySelectorAll('.item-row').forEach(r => r.classList.add('collapsed'));
 
         const row = document.createElement('div');
@@ -758,7 +740,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (itemsContainer.children.length > 1) {
                 row.remove();
                 updateTotal();
-                // Update numbering
                 document.querySelectorAll('.item-row').forEach((r, idx) => {
                     r.querySelector('.row-title span').textContent = `ITEM #${idx + 1}`;
                 });
@@ -787,19 +768,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const discount = parseFloat(row.querySelector('.item-discount').value) || 0;
         const gstRate = parseInt(row.querySelector('.item-gst').value) || 0;
 
-        // Subtotal = (Price * Qty - Discount) * (1 + GST/100)
         const baseAmount = (price * qty) - discount;
         const gstAmount = baseAmount * (gstRate / 100);
         const subtotal = baseAmount + gstAmount;
 
         row.querySelector('.subtotal-display').textContent = `₹${subtotal.toFixed(2)}`;
         row.querySelector('.item-summary-text').textContent = name ? `- ${name}` : '';
-        
         return subtotal;
     };
 
-    // Update Total Display
     const updateTotal = () => {
+        if (!totalDisplay) return;
         let grandTotal = 0;
         document.querySelectorAll('.item-row').forEach(row => {
             grandTotal += updateRowSubtotal(row);
@@ -807,25 +786,6 @@ document.addEventListener('DOMContentLoaded', () => {
         totalDisplay.textContent = `₹${grandTotal.toFixed(2)}`;
     };
 
-    // Show Status Message
-    const showStatus = (message, type) => {
-        statusMessage.textContent = message;
-        statusMessage.className = `status-message ${type}`;
-        statusMessage.style.display = 'block';
-        
-        setTimeout(() => {
-            statusMessage.style.display = 'none';
-        }, 3000);
-    };
-
-    // Event Listeners
-    if (addItemBtn) {
-        addItemBtn.addEventListener('click', () => addItemRow());
-    } else {
-        console.error("addItemBtn not found!");
-    }
-
-    // Form Action Buttons
     const getFormData = () => {
         const customerNameInput = document.getElementById('customerName');
         const items = [];
@@ -868,6 +828,9 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     };
 
+    // --- Event Listeners Initialization ---
+
+    if (addItemBtn) addItemBtn.addEventListener('click', () => addItemRow());
     if (formPreviewBtn) formPreviewBtn.addEventListener('click', () => handlePreview(null, null, getFormData()));
     if (formDownloadBtn) formDownloadBtn.addEventListener('click', () => handleDownload(null, null, getFormData()));
     if (formShareBtn) formShareBtn.addEventListener('click', () => handleShare(null, null, getFormData()));
@@ -875,15 +838,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (form) {
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            console.log("Invoice form submitted");
-
             const formData = getFormData();
             const data = {
                 customer_name: formData.customer_name,
                 items: formData.items,
                 total: formData.total
             };
-
             const action = editingId ? 'update' : 'create';
             if (editingId) data.id = editingId;
 
@@ -893,33 +853,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     body: JSON.stringify(data),
                     headers: { 'Content-Type': 'application/json' }
                 });
-
                 if (response.status === 401) {
                     window.location.href = 'auth.html';
                     return;
                 }
-
-                if (!response.ok) {
-                    let errorMsg = 'Server Error ' + response.status;
-                    try {
-                        const errorData = await response.json();
-                        errorMsg = errorData.error || errorData.details || errorMsg;
-                    } catch (e) {
-                        const rawText = await response.text();
-                        if (rawText) errorMsg = rawText.substring(0, 200);
-                    }
-                    throw new Error(errorMsg);
-                }
-
-                let result;
-                const responseText = await response.text();
-                try {
-                    result = JSON.parse(responseText);
-                } catch (e) {
-                    console.error('JSON Parse Error. Raw response:', responseText);
-                    throw new Error("Server returned invalid data. Raw response: " + responseText.substring(0, 300));
-                }
-
+                const result = await response.json();
                 if (result.success) {
                     showStatus(editingId ? 'Invoice updated!' : 'Invoice saved!', 'success');
                     form.reset();
@@ -930,7 +868,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             SAVE INVOICE
                         `;
                     }
-                    itemsContainer.innerHTML = '';
+                    if (itemsContainer) itemsContainer.innerHTML = '';
                     addItemRow();
                     updateTotal();
                     fetchInvoices();
@@ -938,13 +876,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     showStatus('Error: ' + (result.error || 'Unknown error'), 'error');
                 }
             } catch (error) {
-                console.error('Error saving invoice:', error);
-                showStatus('Connection Error: ' + error.message + ' (Try Ctrl+F5 to clear cache)', 'error');
+                showStatus('Connection Error: ' + error.message, 'error');
             }
         });
     }
 
-    // Initial Load
+    // --- Initial Load ---
     fetchUserInfo();
     fetchInvoices();
     addItemRow();
