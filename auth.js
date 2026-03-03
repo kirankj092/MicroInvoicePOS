@@ -28,6 +28,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const forgotForm = document.getElementById('forgotForm');
     const loginStatus = document.getElementById('loginStatus');
     const regStatus = document.getElementById('regStatus');
+
+    // Check if already logged in
+    const checkAuth = async () => {
+        try {
+            const response = await fetch('auth_api.php?action=check', { credentials: 'include' });
+            if (response.ok) {
+                const data = await response.json();
+                if (data.authenticated) {
+                    window.location.replace('index.html');
+                }
+            }
+        } catch (e) {
+            console.warn("Auth check failed on login page", e);
+        }
+    };
+    checkAuth();
     const forgotStatus = document.getElementById('forgotStatus');
 
     const forgotEmailStep = document.getElementById('forgotEmailStep');
@@ -139,6 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (loginForm) {
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            console.log("Login form submitted...");
             const loginUser = document.getElementById('loginUser');
             const loginPass = document.getElementById('loginPass');
             const loginBtn = loginForm.querySelector('button[type="submit"]');

@@ -4,17 +4,26 @@ error_reporting(0);
 ini_set('display_errors', 0);
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 // 1. CORS Headers
-$origin = $_SERVER['HTTP_ORIGIN'] ?? '*';
-header("Access-Control-Allow-Origin: $origin");
+if (isset($_SERVER['HTTP_ORIGIN'])) {
+    header("Access-Control-Allow-Origin: {$_SERVER['HTTP_ORIGIN']}");
+    header("Access-Control-Allow-Credentials: true");
+}
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
-header("Access-Control-Allow-Credentials: true");
 header('Content-Type: application/json');
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 header('Pragma: no-cache');
 
 // Handle pre-flight OPTIONS request (prevents Network Errors in browsers)
 if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+    if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_METHOD']))
+        header("Access-Control-Allow-Methods: GET, POST, OPTIONS");         
+    if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS']))
+        header("Access-Control-Allow-Headers: {$_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS']}");
+    if (isset($_SERVER['HTTP_ORIGIN'])) {
+        header("Access-Control-Allow-Origin: {$_SERVER['HTTP_ORIGIN']}");
+        header("Access-Control-Allow-Credentials: true");
+    }
     http_response_code(200);
     exit;
 }
@@ -109,6 +118,13 @@ $conn->query("CREATE TABLE IF NOT EXISTS password_resets (
 // Helper function to read JSON body from JavaScript fetch
 function getJsonInput() {
     return json_decode(file_get_contents('php://input'), true);
+}
+
+// Helper for clean JSON output
+function sendJsonResponse($data) {
+    if (ob_get_length()) ob_clean();
+    echo json_encode($data);
+    exit;
 }
 
 // 4. Handle Actions

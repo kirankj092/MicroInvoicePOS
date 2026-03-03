@@ -21,19 +21,30 @@ session_set_cookie_params([
     'httponly' => true,
     'samesite' => 'Lax'
 ]);
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 // 2. CORS Headers
-$origin = $_SERVER['HTTP_ORIGIN'] ?? '*';
-header("Access-Control-Allow-Origin: $origin");
+if (isset($_SERVER['HTTP_ORIGIN'])) {
+    header("Access-Control-Allow-Origin: {$_SERVER['HTTP_ORIGIN']}");
+    header("Access-Control-Allow-Credentials: true");
+}
 header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
-header("Access-Control-Allow-Credentials: true");
 header('Content-Type: application/json');
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 header('Pragma: no-cache');
 
 if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+    if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_METHOD']))
+        header("Access-Control-Allow-Methods: POST, GET, OPTIONS");         
+    if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS']))
+        header("Access-Control-Allow-Headers: {$_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS']}");
+    if (isset($_SERVER['HTTP_ORIGIN'])) {
+        header("Access-Control-Allow-Origin: {$_SERVER['HTTP_ORIGIN']}");
+        header("Access-Control-Allow-Credentials: true");
+    }
     http_response_code(200);
     exit;
 }
@@ -90,6 +101,13 @@ function getJsonInput() {
     return json_decode(file_get_contents('php://input'), true);
 }
 
+// Helper for clean JSON output
+function sendJsonResponse($data) {
+    if (ob_get_length()) ob_clean();
+    echo json_encode($data);
+    exit;
+}
+
 try {
     $action = $_GET['action'] ?? '';
 
@@ -129,8 +147,7 @@ try {
 
         $stmt = $conn->prepare("SELECT id, password FROM users WHERE username = ? OR email = ?");
         if (!$stmt) {
-            echo json_encode(["error" => "SQL Error: " . $conn->error]);
-            break;
+            sendJsonResponse(["error" => "SQL Error: " . $conn->error]);
         }
         $stmt->bind_param("ss", $user, $user);
         $stmt->execute();
@@ -144,12 +161,12 @@ try {
                 $_SESSION['username'] = $user;
                 $_SESSION['last_regen'] = time();
                 
-                echo json_encode(["success" => true, "message" => "Login successful."]);
+                sendJsonResponse(["success" => true, "message" => "Login successful."]);
             } else {
-                echo json_encode(["error" => "Invalid password."]);
+                sendJsonResponse(["error" => "Invalid password."]);
             }
         } else {
-            echo json_encode(["error" => "User not found."]);
+            sendJsonResponse(["error" => "User not found."]);
         }
         $stmt->close();
         break;
@@ -163,14 +180,14 @@ try {
             $result = $stmt->get_result();
             $user_data = $result->fetch_assoc();
             
-            echo json_encode([
+            sendJsonResponse([
                 "authenticated" => true, 
                 "username" => $user_data['username'],
                 "profile" => $user_data
             ]);
             $stmt->close();
         } else {
-            echo json_encode(["authenticated" => false]);
+            sendJsonResponse(["authenticated" => false]);
         }
         break;
 
@@ -229,7 +246,7 @@ try {
                 $params["secure"], $params["httponly"]
             );
         }
-        echo json_encode(["success" => true]);
+        sendJsonResponse(["success" => true]);
         break;
 
     case 'forgot-password':
