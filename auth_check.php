@@ -10,15 +10,15 @@ if (session_status() === PHP_SESSION_NONE) {
     
     ini_set('session.cookie_httponly', 1);
     ini_set('session.use_only_cookies', 1);
-    ini_set('session.cookie_secure', $is_https ? 1 : 0);
+    ini_set('session.cookie_secure', 1);
     ini_set('session.gc_maxlifetime', 2592000);
     session_set_cookie_params([
         'lifetime' => 2592000,
         'path' => '/',
         'domain' => '',
-        'secure' => $is_https,
+        'secure' => true,
         'httponly' => true,
-        'samesite' => 'Lax'
+        'samesite' => 'None'
     ]);
     session_start();
 }

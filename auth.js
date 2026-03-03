@@ -19,15 +19,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const loginForm = document.getElementById('loginForm');
     const registerForm = document.getElementById('registerForm');
-    
-    // Cookie Check for Mobile
+    const forgotForm = document.getElementById('forgotForm');
+    const loginStatus = document.getElementById('loginStatus');
+    const regStatus = document.getElementById('regStatus');
+    const forgotStatus = document.getElementById('forgotStatus');
+
+    const showStatus = (el, message, type) => {
+        if (!el) return;
+        el.textContent = message;
+        el.className = `status-message ${type}`;
+        el.style.display = 'block';
+    };
+
+    // Cookie Check for Mobile/Desktop
     if (!navigator.cookieEnabled) {
         if (loginStatus) showStatus(loginStatus, "Error: Cookies are disabled in your browser. Login will not work.", "error");
         if (regStatus) showStatus(regStatus, "Error: Cookies are disabled in your browser.", "error");
     }
-    const forgotForm = document.getElementById('forgotForm');
-    const loginStatus = document.getElementById('loginStatus');
-    const regStatus = document.getElementById('regStatus');
 
     // Check if already logged in
     const checkAuth = async () => {
@@ -44,8 +52,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     checkAuth();
-    const forgotStatus = document.getElementById('forgotStatus');
-
     const forgotEmailStep = document.getElementById('forgotEmailStep');
     const forgotCodeStep = document.getElementById('forgotCodeStep');
     const forgotPassStep = document.getElementById('forgotPassStep');
@@ -323,9 +329,4 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    const showStatus = (el, message, type) => {
-        el.textContent = message;
-        el.className = `status-message ${type}`;
-        el.style.display = 'block';
-    };
 });

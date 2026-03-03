@@ -17,9 +17,9 @@ session_set_cookie_params([
     'lifetime' => 2592000,
     'path' => '/',
     'domain' => '',
-    'secure' => $is_https,
+    'secure' => true,
     'httponly' => true,
-    'samesite' => 'Lax'
+    'samesite' => 'None'
 ]);
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -155,8 +155,7 @@ try {
 
         if ($row = $result->fetch_assoc()) {
             if (password_verify($pass, $row['password'])) {
-                // Regenerate session ID to prevent session hijacking
-                session_regenerate_id(true);
+                // Session persistence fix
                 $_SESSION['user_id'] = $row['id'];
                 $_SESSION['username'] = $user;
                 $_SESSION['last_regen'] = time();
