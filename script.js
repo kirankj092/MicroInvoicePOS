@@ -5,14 +5,6 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log("Micro Invoice POS Initializing...");
-    
-    // Global Error Handler for easier debugging on Hostinger
-    window.onerror = function(message, source, lineno, colno, error) {
-        console.error("Global Error:", message, "at", source, ":", lineno);
-        // Optional: show a small toast or alert if in debug mode
-        return false;
-    };
-    // Check for html2canvas
     if (typeof html2canvas === 'undefined') {
         console.warn("html2canvas not loaded yet. Retrying in 1s...");
         setTimeout(() => {
@@ -23,58 +15,34 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }, 1000);
     }
-
-    // DOM Elements with safety checks
-    const safeGet = (id) => document.getElementById(id);
-    
-    const form = safeGet('invoiceForm');
-    const itemsContainer = safeGet('itemsContainer');
-    const addItemBtn = safeGet('addItemBtn');
-    const totalDisplay = safeGet('totalDisplay');
-    const invoiceList = safeGet('invoiceList');
-    const emptyState = safeGet('emptyState');
-    const statusMessage = safeGet('statusMessage');
-    const saveBtn = safeGet('saveBtn');
-    const formPreviewBtn = safeGet('formPreviewBtn');
-    const formDownloadBtn = safeGet('formDownloadBtn');
-    const formShareBtn = safeGet('formShareBtn');
-    const shopNameDisplay = safeGet('shopNameDisplay');
-    const shopTagline = safeGet('shopTagline');
-    const footerShopName = safeGet('footerShopName');
-    const logoutBtn = safeGet('logoutBtn');
-    const profileBtn = safeGet('profileBtn');
-    const profileModal = safeGet('profileModal');
-    const closeProfileModal = safeGet('closeProfileModal');
-    const profileForm = safeGet('profileForm');
-    const shopLogoHeader = safeGet('shopLogoHeader');
-    const headerLogoImg = safeGet('headerLogoImg');
-    const defaultIconBox = safeGet('defaultIconBox');
-    const menuToggle = safeGet('menuToggle');
-    const sidebar = safeGet('sidebar');
-    const navItems = document.querySelectorAll('.nav-item');
-    const sections = document.querySelectorAll('.content-section');
-    const sidebarLogout = safeGet('sidebarLogout');
-    const closeSidebar = safeGet('closeSidebar');
-
-    // Customer Elements
-    const customerList = safeGet('customerList');
-    const customerEmptyState = safeGet('customerEmptyState');
-    const addCustomerBtn = safeGet('addCustomerBtn');
-    const customerFormSection = safeGet('customerFormSection');
-    const customerForm = safeGet('customerForm');
-    const cancelCustomerBtn = safeGet('cancelCustomerBtn');
-    const customerNameInput = safeGet('customerName');
-    const customerSuggestions = safeGet('customerSuggestions');
+    const form = document.getElementById('invoiceForm');
+    const itemsContainer = document.getElementById('itemsContainer');
+    const addItemBtn = document.getElementById('addItemBtn');
+    const totalDisplay = document.getElementById('totalDisplay');
+    const invoiceList = document.getElementById('invoiceList');
+    const emptyState = document.getElementById('emptyState');
+    const statusMessage = document.getElementById('statusMessage');
+    const saveBtn = document.getElementById('saveBtn');
+    const formPreviewBtn = document.getElementById('formPreviewBtn');
+    const formDownloadBtn = document.getElementById('formDownloadBtn');
+    const formShareBtn = document.getElementById('formShareBtn');
+    const shopNameDisplay = document.getElementById('shopNameDisplay');
+    const shopTagline = document.getElementById('shopTagline');
+    const footerShopName = document.getElementById('footerShopName');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const profileBtn = document.getElementById('profileBtn');
+    const profileModal = document.getElementById('profileModal');
+    const closeProfileModal = document.getElementById('closeProfileModal');
+    const profileForm = document.getElementById('profileForm');
+    const shopLogoHeader = document.getElementById('shopLogoHeader');
+    const headerLogoImg = document.getElementById('headerLogoImg');
+    const defaultIconBox = document.getElementById('defaultIconBox');
 
     let editingId = null;
     let userProfile = null;
     let allInvoices = [];
-    let allCustomers = [];
-    let editingCustomerId = null;
     let currentPage = 1;
     const pageSize = 10;
-
-    // --- Utility Functions ---
 
     // Security: Escape HTML to prevent XSS
     const escapeHTML = (str) => {
@@ -87,92 +55,30 @@ document.addEventListener('DOMContentLoaded', () => {
             .replace(/'/g, "&#039;");
     };
 
-    // Handle Image Previews & Base64 Conversion
-    const handleImageUpload = (input, previewId) => {
-        if (!input) return;
-        input.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    const preview = document.getElementById(previewId);
-                    if (preview) preview.innerHTML = `<img src="${event.target.result}" alt="Preview">`;
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-    };
-
-    // Show Status Message
-    const showStatus = (message, type) => {
-        if (!statusMessage) return;
-        statusMessage.textContent = message;
-        statusMessage.className = `status-message ${type}`;
-        statusMessage.style.display = 'block';
-        
-        setTimeout(() => {
-            statusMessage.style.display = 'none';
-        }, 3000);
-    };
-
-    // --- Core Logic ---
-
     // Fetch User Info & Profile
     const fetchUserInfo = async () => {
         try {
-            const response = await fetch('auth_api.php?action=check', { credentials: 'include' });
-            if (!response.ok) {
-                try {
-                    const errorData = await response.json();
-                    if (errorData.error && errorData.error.includes('db_config.php')) {
-                        showStatus('Database configuration (db_config.php) missing on server!', 'error');
-                        return;
-                    }
-                } catch (e) {}
-            }
+            const response = await fetch('auth_api.php?action=check');
             const data = await response.json();
             if (data.authenticated) {
                 userProfile = data.profile;
                 updateUIWithProfile(userProfile);
-            } else {
-                window.location.replace('auth.html');
             }
         } catch (error) {
-            console.error("Auth check failed:", error);
+            console.log("Auth check skipped in preview");
         }
     };
 
     const updateUIWithProfile = (profile) => {
-        if (!profile) return;
+        if (!profile) {
+            console.log("No profile data found in check response.");
+            return;
+        }
         
         const name = profile.shop_name || "Micro Invoice POS";
         if (shopNameDisplay) shopNameDisplay.textContent = name;
         if (footerShopName) footerShopName.textContent = name;
         
-        // Update main profile section inputs
-        const fields = {
-            'shopNameMain': profile.shop_name,
-            'shopAddressMain': profile.address,
-            'shopPhoneMain': profile.phone,
-            'shopGstinMain': profile.gstin,
-            'shopEmailMain': profile.email
-        };
-
-        for (const [id, val] of Object.entries(fields)) {
-            const el = document.getElementById(id);
-            if (el) el.value = val || '';
-        }
-        
-        const logoPreviewMain = document.getElementById('logoPreviewMain');
-        const signaturePreviewMain = document.getElementById('signaturePreviewMain');
-
-        if (logoPreviewMain && profile.shop_logo) {
-            logoPreviewMain.innerHTML = `<img src="${profile.shop_logo}" alt="Logo">`;
-        }
-        if (signaturePreviewMain && profile.signature) {
-            signaturePreviewMain.innerHTML = `<img src="${profile.signature}" alt="Signature">`;
-        }
-
         if (profile.shop_logo) {
             if (headerLogoImg) headerLogoImg.src = profile.shop_logo;
             if (shopLogoHeader) shopLogoHeader.style.display = 'block';
@@ -183,139 +89,26 @@ document.addEventListener('DOMContentLoaded', () => {
             if (defaultIconBox) defaultIconBox.style.display = 'flex';
             if (shopTagline) shopTagline.style.display = 'block';
         }
+        console.log("UI updated with profile:", name);
     };
-
-    // Navigation Logic
-    const switchSection = (sectionId) => {
-        sections.forEach(s => s.classList.remove('active'));
-        navItems.forEach(n => n.classList.remove('active'));
-
-        const targetSection = document.getElementById(`${sectionId}Section`);
-        const targetNav = document.querySelector(`.nav-item[data-section="${sectionId}"]`);
-
-        if (targetSection) targetSection.classList.add('active');
-        if (targetNav) targetNav.classList.add('active');
-
-        if (window.innerWidth <= 768 && sidebar) {
-            sidebar.classList.remove('open');
-        }
-
-        if (sectionId === 'dashboard') {
-            updateDashboardStats();
-        } else if (sectionId === 'customers') {
-            fetchCustomers();
-        }
-    };
-
-    navItems.forEach(item => {
-        item.addEventListener('click', (e) => {
-            const section = item.dataset.section;
-            if (section) {
-                e.preventDefault();
-                switchSection(section);
-            }
-        });
-    });
-
-    if (menuToggle && sidebar) {
-        menuToggle.addEventListener('click', (e) => {
-            e.stopPropagation();
-            sidebar.classList.toggle('open');
-        });
-    }
-
-    if (closeSidebar) {
-        closeSidebar.addEventListener('click', () => {
-            sidebar.classList.remove('open');
-        });
-    }
-
-    document.addEventListener('click', (e) => {
-        if (window.innerWidth <= 768 && sidebar && sidebar.classList.contains('open')) {
-            if (!sidebar.contains(e.target) && !menuToggle.contains(e.target)) {
-                sidebar.classList.remove('open');
-            }
-        }
-    });
-
-    const updateDashboardStats = () => {
-        const dashTotalSales = document.getElementById('dashTotalSales');
-        const dashInvoiceCount = document.getElementById('dashInvoiceCount');
-        const dashCustomerCount = document.getElementById('dashCustomerCount');
-
-        if (!allInvoices) return;
-
-        const total = allInvoices.reduce((sum, inv) => sum + parseFloat(inv.total || 0), 0);
-        const customers = new Set(allInvoices.map(inv => inv.customer_name)).size;
-
-        if (dashTotalSales) dashTotalSales.textContent = `₹${total.toFixed(2)}`;
-        if (dashInvoiceCount) dashInvoiceCount.textContent = allInvoices.length;
-        if (dashCustomerCount) dashCustomerCount.textContent = customers;
-    };
-
-    // Profile Section Logic (Main)
-    const profileFormMain = document.getElementById('profileFormMain');
-    if (profileFormMain) {
-        handleImageUpload(document.getElementById('shopLogoInputMain'), 'logoPreviewMain');
-        handleImageUpload(document.getElementById('signatureInputMain'), 'signaturePreviewMain');
-
-        profileFormMain.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const logoImg = document.getElementById('logoPreviewMain').querySelector('img');
-            const signatureImg = document.getElementById('signaturePreviewMain').querySelector('img');
-            
-            const data = {
-                shop_name: document.getElementById('shopNameMain').value,
-                address: document.getElementById('shopAddressMain').value,
-                phone: document.getElementById('shopPhoneMain').value,
-                gstin: document.getElementById('shopGstinMain').value,
-                email: document.getElementById('shopEmailMain').value,
-                shop_logo: logoImg ? logoImg.src : null,
-                signature: signatureImg ? signatureImg.src : null
-            };
-
-            try {
-                const response = await fetch('auth_api.php?action=update_profile', {
-                    method: 'POST',
-                    body: JSON.stringify(data),
-                    headers: { 'Content-Type': 'application/json' }
-                });
-                const result = await response.json();
-                if (result.success) {
-                    showStatus('Profile updated!', 'success');
-                    fetchUserInfo();
-                } else {
-                    showStatus('Error: ' + result.error, 'error');
-                }
-            } catch (error) {
-                showStatus('Error saving profile', 'error');
-            }
-        });
-    }
-
-    // Sidebar Logout
-    if (sidebarLogout) {
-        sidebarLogout.addEventListener('click', (e) => {
-            e.preventDefault();
-            if (logoutBtn) logoutBtn.click();
-        });
-    }
 
     // Profile Modal Logic
     if (profileBtn) {
+        console.log("Profile button initialized");
         profileBtn.addEventListener('click', () => {
+            console.log("Profile button clicked");
             if (userProfile) {
-                const fields = {
-                    'shopName': userProfile.shop_name,
-                    'shopAddress': userProfile.address,
-                    'shopPhone': userProfile.phone,
-                    'shopGstin': userProfile.gstin,
-                    'shopEmail': userProfile.email
-                };
-                for (const [id, val] of Object.entries(fields)) {
-                    const el = document.getElementById(id);
-                    if (el) el.value = val || '';
-                }
+                const shopNameInput = document.getElementById('shopName');
+                const shopAddressInput = document.getElementById('shopAddress');
+                const shopPhoneInput = document.getElementById('shopPhone');
+                const shopGstinInput = document.getElementById('shopGstin');
+                const shopEmailInput = document.getElementById('shopEmail');
+
+                if (shopNameInput) shopNameInput.value = userProfile.shop_name || '';
+                if (shopAddressInput) shopAddressInput.value = userProfile.address || '';
+                if (shopPhoneInput) shopPhoneInput.value = userProfile.phone || '';
+                if (shopGstinInput) shopGstinInput.value = userProfile.gstin || '';
+                if (shopEmailInput) shopEmailInput.value = userProfile.email || '';
                 
                 const logoPreview = document.getElementById('logoPreview');
                 const signaturePreview = document.getElementById('signaturePreview');
@@ -329,11 +122,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (profileModal) profileModal.style.display = 'block';
         });
+    } else {
+        console.error("Profile button NOT found in DOM!");
     }
 
     if (closeProfileModal) {
         closeProfileModal.addEventListener('click', () => {
-            if (profileModal) profileModal.style.display = 'none';
+            profileModal.style.display = 'none';
         });
     }
 
@@ -341,11 +136,24 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target === profileModal) profileModal.style.display = 'none';
     });
 
-    // Handle Image Uploads for Modal
+    // Handle Image Previews & Base64 Conversion
+    const handleImageUpload = (input, previewId) => {
+        input.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    document.getElementById(previewId).innerHTML = `<img src="${event.target.result}" alt="Preview">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    };
+
     handleImageUpload(document.getElementById('shopLogoInput'), 'logoPreview');
     handleImageUpload(document.getElementById('signatureInput'), 'signaturePreview');
 
-    // Save Profile from Modal
+    // Save Profile
     if (profileForm) {
         profileForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -371,7 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const result = await response.json();
                 if (result.success) {
                     showStatus('Profile updated!', 'success');
-                    if (profileModal) profileModal.style.display = 'none';
+                    profileModal.style.display = 'none';
                     fetchUserInfo();
                 } else {
                     showStatus('Error: ' + result.error, 'error');
@@ -387,243 +195,81 @@ document.addEventListener('DOMContentLoaded', () => {
         logoutBtn.addEventListener('click', async () => {
             if (!confirm('Are you sure you want to logout?')) return;
             try {
-                await fetch('auth_api.php?action=logout', { credentials: 'include' });
-                window.location.replace('auth.html');
+                await fetch('auth_api.php?action=logout');
+                window.location.href = 'auth.html';
             } catch (error) {
                 console.error("Logout failed:", error);
-                window.location.replace('auth.html');
-            }
-        });
-    }
-
-    // --- Customer Management Logic ---
-
-    const fetchCustomers = async () => {
-        try {
-            const response = await fetch('api.php?action=customers_read', { credentials: 'include' });
-            if (response.status === 401) {
                 window.location.href = 'auth.html';
-                return;
-            }
-            if (!response.ok) throw new Error('Server Error ' + response.status);
-            
-            allCustomers = await response.json();
-            renderCustomers();
-        } catch (error) {
-            console.error('Error fetching customers:', error);
-        }
-    };
-
-    const renderCustomers = () => {
-        if (!customerList) return;
-        customerList.innerHTML = '';
-        
-        if (!allCustomers || allCustomers.length === 0) {
-            if (customerEmptyState) customerEmptyState.style.display = 'block';
-            return;
-        }
-
-        if (customerEmptyState) customerEmptyState.style.display = 'none';
-        
-        allCustomers.forEach(cust => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td style="font-weight: 500;">${escapeHTML(cust.name)}</td>
-                <td>${escapeHTML(cust.phone)}</td>
-                <td>${escapeHTML(cust.email || '-')}</td>
-                <td>${escapeHTML(cust.address || '-')}</td>
-                <td class="text-right action-cell">
-                    <button class="btn-icon edit-cust-btn" data-id="${cust.id}" title="Edit">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
-                    </button>
-                    <button class="btn-icon delete-cust-btn" data-id="${cust.id}" title="Delete">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-                    </button>
-                </td>
-            `;
-            customerList.appendChild(row);
-        });
-
-        document.querySelectorAll('.edit-cust-btn').forEach(btn => {
-            btn.addEventListener('click', () => handleEditCustomer(btn.dataset.id));
-        });
-        document.querySelectorAll('.delete-cust-btn').forEach(btn => {
-            btn.addEventListener('click', () => handleDeleteCustomer(btn.dataset.id));
-        });
-    };
-
-    const handleEditCustomer = (id) => {
-        const cust = allCustomers.find(c => c.id == id);
-        if (!cust) return;
-
-        editingCustomerId = id;
-        document.getElementById('customerFormTitle').textContent = 'Edit Customer';
-        document.getElementById('custName').value = cust.name;
-        document.getElementById('custPhone').value = cust.phone;
-        document.getElementById('custEmail').value = cust.email || '';
-        document.getElementById('custAddress').value = cust.address || '';
-        document.getElementById('custDob').value = cust.dob || '';
-
-        if (customerFormSection) customerFormSection.style.display = 'block';
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
-
-    const handleDeleteCustomer = async (id) => {
-        if (!confirm('Are you sure you want to delete this customer?')) return;
-        try {
-            const response = await fetch('api.php?action=customer_delete', {
-                method: 'POST',
-                body: JSON.stringify({ id }),
-                headers: { 'Content-Type': 'application/json' }
-            });
-            const result = await response.json();
-            if (result.success) {
-                showStatus('Customer deleted!', 'success');
-                fetchCustomers();
-            }
-        } catch (error) {
-            showStatus('Error deleting customer', 'error');
-        }
-    };
-
-    if (addCustomerBtn) {
-        addCustomerBtn.addEventListener('click', () => {
-            editingCustomerId = null;
-            if (customerForm) customerForm.reset();
-            document.getElementById('customerFormTitle').textContent = 'New Customer';
-            if (customerFormSection) customerFormSection.style.display = 'block';
-        });
-    }
-
-    if (cancelCustomerBtn) {
-        cancelCustomerBtn.addEventListener('click', () => {
-            if (customerFormSection) customerFormSection.style.display = 'none';
-        });
-    }
-
-    if (customerForm) {
-        customerForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const data = {
-                name: document.getElementById('custName').value,
-                phone: document.getElementById('custPhone').value,
-                email: document.getElementById('custEmail').value,
-                address: document.getElementById('custAddress').value,
-                dob: document.getElementById('custDob').value
-            };
-
-            const action = editingCustomerId ? 'customer_update' : 'customer_create';
-            if (editingCustomerId) data.id = editingCustomerId;
-
-            try {
-                const response = await fetch(`api.php?action=${action}`, {
-                    method: 'POST',
-                    body: JSON.stringify(data),
-                    headers: { 'Content-Type': 'application/json' }
-                });
-                
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(errorText || `Server error: ${response.status}`);
-                }
-
-                const result = await response.json();
-                if (result.success) {
-                    showStatus(editingCustomerId ? 'Customer updated!' : 'Customer added!', 'success');
-                    if (customerFormSection) customerFormSection.style.display = 'none';
-                    fetchCustomers();
-                } else {
-                    showStatus('Error: ' + (result.error || 'Unknown error'), 'error');
-                }
-            } catch (error) {
-                console.error('Error saving customer:', error);
-                showStatus('Error saving customer: ' + error.message, 'error');
             }
         });
     }
 
-    // --- Typeahead / Auto-suggest Logic ---
-
-    if (customerNameInput && customerSuggestions) {
-        customerNameInput.addEventListener('input', (e) => {
-            const val = e.target.value.toLowerCase();
-            if (!val) {
-                customerSuggestions.style.display = 'none';
-                return;
-            }
-
-            const matches = allCustomers.filter(c => 
-                c.name.toLowerCase().includes(val) || 
-                c.phone.includes(val)
-            ).slice(0, 5);
-
-            if (matches.length > 0) {
-                customerSuggestions.innerHTML = '';
-                matches.forEach(match => {
-                    const div = document.createElement('div');
-                    div.className = 'suggestion-item';
-                    div.innerHTML = `
-                        <span class="name">${escapeHTML(match.name)}</span>
-                        <span class="phone">${escapeHTML(match.phone)}</span>
-                    `;
-                    div.addEventListener('click', () => {
-                        customerNameInput.value = match.name;
-                        customerSuggestions.style.display = 'none';
-                    });
-                    customerSuggestions.appendChild(div);
-                });
-                customerSuggestions.style.display = 'block';
-            } else {
-                customerSuggestions.style.display = 'none';
-            }
-        });
-
-        // Close suggestions when clicking outside
-        document.addEventListener('click', (e) => {
-            if (!customerNameInput.contains(e.target) && !customerSuggestions.contains(e.target)) {
-                customerSuggestions.style.display = 'none';
-            }
-        });
-    }
-
-    // --- Invoice Management ---
-
+    // Fetch Invoices (Read)
     const fetchInvoices = async () => {
         try {
-            const response = await fetch('api.php?action=read', { credentials: 'include' });
+            const response = await fetch('api.php?action=read');
             if (response.status === 401) {
                 window.location.href = 'auth.html';
                 return;
             }
-            if (!response.ok) throw new Error('Server Error ' + response.status);
+            if (!response.ok) {
+                let errorMsg = 'Server Error ' + response.status;
+                try {
+                    const errorData = await response.json();
+                    errorMsg = errorData.error || errorData.details || errorMsg;
+                } catch (e) {
+                    // If not JSON, get raw text
+                    const rawText = await response.text();
+                    if (rawText) errorMsg = rawText.substring(0, 200);
+                }
+                throw new Error(errorMsg);
+            }
             
-            const invoices = await response.json();
+            let invoices;
+            const responseText = await response.text();
+            try {
+                invoices = JSON.parse(responseText);
+            } catch (e) {
+                console.error('JSON Parse Error. Raw response:', responseText);
+                throw new Error("Server returned invalid data. Raw response: " + responseText.substring(0, 300));
+            }
             allInvoices = invoices;
             currentPage = 1;
             renderInvoices();
-            updateDashboardStats();
         } catch (error) {
             console.error('Error fetching invoices:', error);
             if (emptyState) {
                 emptyState.style.display = 'block';
-                emptyState.textContent = 'Connection Error: ' + error.message;
+                emptyState.textContent = 'Connection Error: ' + error.message + ' (Try Ctrl+F5 to clear cache)';
             }
         }
     };
 
+    // Render Invoices
     const renderInvoices = () => {
-        if (!invoiceList) return;
+        const invoiceList = document.getElementById('invoiceList');
+        const emptyState = document.getElementById('emptyState');
+        const paginationContainer = document.getElementById('paginationContainer');
+        const prevPageBtn = document.getElementById('prevPage');
+        const nextPageBtn = document.getElementById('nextPage');
+        const pageInfo = document.getElementById('pageInfo');
+
         invoiceList.innerHTML = '';
         
-        if (!allInvoices || allInvoices.length === 0) {
-            if (emptyState) emptyState.style.display = 'block';
-            const paginationContainer = document.getElementById('paginationContainer');
-            if (paginationContainer) paginationContainer.style.display = 'none';
+        if (!allInvoices || !Array.isArray(allInvoices) || allInvoices.length === 0) {
+            emptyState.style.display = 'block';
+            paginationContainer.style.display = 'none';
+            if (allInvoices && allInvoices.error) {
+                emptyState.textContent = `Error: ${allInvoices.error}`;
+            } else {
+                emptyState.textContent = 'No invoices recorded yet.';
+            }
             return;
         }
 
-        if (emptyState) emptyState.style.display = 'none';
+        emptyState.style.display = 'none';
         
+        // Calculate pagination
         const totalPages = Math.ceil(allInvoices.length / pageSize);
         if (currentPage > totalPages) currentPage = totalPages;
         if (currentPage < 1) currentPage = 1;
@@ -632,23 +278,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const endIndex = startIndex + pageSize;
         const paginatedInvoices = allInvoices.slice(startIndex, endIndex);
 
-        const paginationContainer = document.getElementById('paginationContainer');
-        const prevPageBtn = document.getElementById('prevPage');
-        const nextPageBtn = document.getElementById('nextPage');
-        const pageInfo = document.getElementById('pageInfo');
-
+        // Update Pagination Controls
         if (allInvoices.length > pageSize) {
-            if (paginationContainer) paginationContainer.style.display = 'flex';
-            if (pageInfo) pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
-            if (prevPageBtn) prevPageBtn.disabled = currentPage === 1;
-            if (nextPageBtn) nextPageBtn.disabled = currentPage === totalPages;
+            paginationContainer.style.display = 'flex';
+            pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+            prevPageBtn.disabled = currentPage === 1;
+            nextPageBtn.disabled = currentPage === totalPages;
         } else {
-            if (paginationContainer) paginationContainer.style.display = 'none';
+            paginationContainer.style.display = 'none';
         }
         
         paginatedInvoices.forEach(inv => {
             const row = document.createElement('tr');
             const date = new Date(inv.created_at).toLocaleDateString();
+            
             const itemsSummary = inv.items && inv.items.length > 0 
                 ? (inv.items.length === 1 ? escapeHTML(inv.items[0].item_name) : `${escapeHTML(inv.items[0].item_name)} (+${inv.items.length - 1} more)`)
                 : 'No items';
@@ -697,40 +340,36 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    const prevPageBtn = document.getElementById('prevPage');
-    if (prevPageBtn) {
-        prevPageBtn.addEventListener('click', () => {
-            if (currentPage > 1) {
-                currentPage--;
-                renderInvoices();
-            }
-        });
-    }
+    // Pagination Button Listeners
+    document.getElementById('prevPage').addEventListener('click', () => {
+        if (currentPage > 1) {
+            currentPage--;
+            renderInvoices();
+        }
+    });
 
-    const nextPageBtn = document.getElementById('nextPage');
-    if (nextPageBtn) {
-        nextPageBtn.addEventListener('click', () => {
-            const totalPages = Math.ceil(allInvoices.length / pageSize);
-            if (currentPage < totalPages) {
-                currentPage++;
-                renderInvoices();
-            }
-        });
-    }
+    document.getElementById('nextPage').addEventListener('click', () => {
+        const totalPages = Math.ceil(allInvoices.length / pageSize);
+        if (currentPage < totalPages) {
+            currentPage++;
+            renderInvoices();
+        }
+    });
 
-    // --- PNG Generation ---
-
+    // PNG Generation Logic
     const generateInvoiceCanvas = async (invoice) => {
         const tpl = document.getElementById('invoiceTemplate');
-        if (!tpl) throw new Error("Template not found");
         
-        document.getElementById('tpl-shop-name').textContent = userProfile?.shop_name || "Micro Invoice";
+        // Populate Shop Info
+        const shopName = userProfile?.shop_name || "Micro Invoice";
+        document.getElementById('tpl-shop-name').textContent = shopName;
         document.getElementById('tpl-shop-address').textContent = userProfile?.address || "";
         document.getElementById('tpl-shop-contact').textContent = 
             (userProfile?.phone ? `Phone: ${userProfile.phone}` : "") + 
             (userProfile?.email ? ` | Email: ${userProfile.email}` : "");
         document.getElementById('tpl-shop-gstin').textContent = userProfile?.gstin ? `GSTIN: ${userProfile.gstin}` : "";
 
+        // Handle Logo
         const tplLogoContainer = document.getElementById('tpl-logo-container');
         const tplLogo = document.getElementById('tpl-logo');
         if (userProfile?.shop_logo) {
@@ -740,6 +379,7 @@ document.addEventListener('DOMContentLoaded', () => {
             tplLogoContainer.style.display = 'none';
         }
 
+        // Handle Signature
         const tplSigContainer = document.getElementById('tpl-signature-container');
         const tplSig = document.getElementById('tpl-signature');
         if (userProfile?.signature) {
@@ -781,10 +421,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
+    // Handle Preview
     const handlePreview = async (id, invoices, directData = null) => {
         const inv = directData || invoices.find(i => i.id == id);
         if (!inv) return;
 
+        // Open window immediately to avoid popup blocker
         const newTab = window.open('', '_blank');
         if (!newTab) {
             showStatus('Popup blocked! Please allow popups.', 'error');
@@ -796,6 +438,7 @@ document.addEventListener('DOMContentLoaded', () => {
             showStatus('Generating preview...', 'success');
             const canvas = await generateInvoiceCanvas(inv);
             const imgData = canvas.toDataURL('image/png');
+            
             newTab.document.body.innerHTML = `<img src="${imgData}" style="max-width: 100%; height: auto; display: block; margin: 0 auto; box-shadow: 0 0 20px rgba(0,0,0,0.1);">`;
             newTab.document.title = `Invoice Preview - ${inv.customer_name}`;
         } catch (error) {
@@ -804,6 +447,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // Handle Download
     const handleDownload = async (id, invoices, directData = null) => {
         const inv = directData || invoices.find(i => i.id == id);
         if (!inv) return;
@@ -820,6 +464,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // Handle Share
     const handleShare = async (id, invoices, directData = null) => {
         const inv = directData || invoices.find(i => i.id == id);
         if (!inv) return;
@@ -827,7 +472,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const itemsText = inv.items ? inv.items.map(i => `${i.item_name} (x${i.quantity})`).join(', ') : 'No items';
         const shareData = {
             title: `Invoice #${inv.id}`,
-            text: `Invoice for ${inv.customer_name}\nItems: ${itemsText}\nTotal: ₹${parseFloat(inv.total).toFixed(2)}\nDate: ${new Date(inv.created_at).toLocaleDateString()}`,
+            text: `Invoice for ${inv.customer_name}\nItems: ${itemsText}\nTotal: $${parseFloat(inv.total).toFixed(2)}\nDate: ${new Date(inv.created_at).toLocaleDateString()}`,
             url: window.location.href
         };
 
@@ -835,14 +480,18 @@ document.addEventListener('DOMContentLoaded', () => {
             if (navigator.share) {
                 await navigator.share(shareData);
             } else {
+                // Fallback: Copy to clipboard
                 await navigator.clipboard.writeText(shareData.text);
                 showStatus('Details copied to clipboard!', 'success');
             }
         } catch (error) {
-            if (error.name !== 'AbortError') showStatus('Error sharing invoice', 'error');
+            if (error.name !== 'AbortError') {
+                showStatus('Error sharing invoice', 'error');
+            }
         }
     };
 
+    // Handle Edit (Pre-fill form)
     const handleEdit = (id, invoices) => {
         const inv = invoices.find(i => i.id == id);
         if (!inv) return;
@@ -850,28 +499,26 @@ document.addEventListener('DOMContentLoaded', () => {
         editingId = id;
         document.getElementById('customerName').value = inv.customer_name;
         
-        if (itemsContainer) {
-            itemsContainer.innerHTML = '';
-            if (inv.items && inv.items.length > 0) {
-                inv.items.forEach(item => addItemRow(item));
-            } else {
-                addItemRow();
-            }
+        // Clear and refill items
+        itemsContainer.innerHTML = '';
+        if (inv.items && inv.items.length > 0) {
+            inv.items.forEach(item => addItemRow(item));
+        } else {
+            addItemRow();
         }
         
         updateTotal();
-        if (saveBtn) {
-            saveBtn.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-                UPDATE INVOICE
-            `;
-        }
-        switchSection('sales');
+        saveBtn.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            UPDATE INVOICE
+        `;
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
+    // Handle Delete
     const handleDelete = async (id) => {
         if (!confirm('Are you sure you want to delete this invoice?')) return;
+
         try {
             const response = await fetch('api.php?action=delete', {
                 method: 'POST',
@@ -888,11 +535,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // --- Form Logic ---
-
+    // Add Item Row
     const addItemRow = (data = null) => {
-        if (!itemsContainer) return;
+        if (!itemsContainer) {
+            console.error("itemsContainer not found!");
+            return;
+        }
 
+        // Collapse all existing rows
         document.querySelectorAll('.item-row').forEach(r => r.classList.add('collapsed'));
 
         const row = document.createElement('div');
@@ -961,6 +611,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (itemsContainer.children.length > 1) {
                 row.remove();
                 updateTotal();
+                // Update numbering
                 document.querySelectorAll('.item-row').forEach((r, idx) => {
                     r.querySelector('.row-title span').textContent = `ITEM #${idx + 1}`;
                 });
@@ -989,17 +640,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const discount = parseFloat(row.querySelector('.item-discount').value) || 0;
         const gstRate = parseInt(row.querySelector('.item-gst').value) || 0;
 
+        // Subtotal = (Price * Qty - Discount) * (1 + GST/100)
         const baseAmount = (price * qty) - discount;
         const gstAmount = baseAmount * (gstRate / 100);
         const subtotal = baseAmount + gstAmount;
 
         row.querySelector('.subtotal-display').textContent = `₹${subtotal.toFixed(2)}`;
         row.querySelector('.item-summary-text').textContent = name ? `- ${name}` : '';
+        
         return subtotal;
     };
 
+    // Update Total Display
     const updateTotal = () => {
-        if (!totalDisplay) return;
         let grandTotal = 0;
         document.querySelectorAll('.item-row').forEach(row => {
             grandTotal += updateRowSubtotal(row);
@@ -1007,6 +660,25 @@ document.addEventListener('DOMContentLoaded', () => {
         totalDisplay.textContent = `₹${grandTotal.toFixed(2)}`;
     };
 
+    // Show Status Message
+    const showStatus = (message, type) => {
+        statusMessage.textContent = message;
+        statusMessage.className = `status-message ${type}`;
+        statusMessage.style.display = 'block';
+        
+        setTimeout(() => {
+            statusMessage.style.display = 'none';
+        }, 3000);
+    };
+
+    // Event Listeners
+    if (addItemBtn) {
+        addItemBtn.addEventListener('click', () => addItemRow());
+    } else {
+        console.error("addItemBtn not found!");
+    }
+
+    // Form Action Buttons
     const getFormData = () => {
         const customerNameInput = document.getElementById('customerName');
         const items = [];
@@ -1049,9 +721,6 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     };
 
-    // --- Event Listeners Initialization ---
-
-    if (addItemBtn) addItemBtn.addEventListener('click', () => addItemRow());
     if (formPreviewBtn) formPreviewBtn.addEventListener('click', () => handlePreview(null, null, getFormData()));
     if (formDownloadBtn) formDownloadBtn.addEventListener('click', () => handleDownload(null, null, getFormData()));
     if (formShareBtn) formShareBtn.addEventListener('click', () => handleShare(null, null, getFormData()));
@@ -1059,12 +728,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (form) {
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
+            console.log("Invoice form submitted");
+
             const formData = getFormData();
             const data = {
                 customer_name: formData.customer_name,
                 items: formData.items,
                 total: formData.total
             };
+
             const action = editingId ? 'update' : 'create';
             if (editingId) data.id = editingId;
 
@@ -1074,11 +746,33 @@ document.addEventListener('DOMContentLoaded', () => {
                     body: JSON.stringify(data),
                     headers: { 'Content-Type': 'application/json' }
                 });
+
                 if (response.status === 401) {
                     window.location.href = 'auth.html';
                     return;
                 }
-                const result = await response.json();
+
+                if (!response.ok) {
+                    let errorMsg = 'Server Error ' + response.status;
+                    try {
+                        const errorData = await response.json();
+                        errorMsg = errorData.error || errorData.details || errorMsg;
+                    } catch (e) {
+                        const rawText = await response.text();
+                        if (rawText) errorMsg = rawText.substring(0, 200);
+                    }
+                    throw new Error(errorMsg);
+                }
+
+                let result;
+                const responseText = await response.text();
+                try {
+                    result = JSON.parse(responseText);
+                } catch (e) {
+                    console.error('JSON Parse Error. Raw response:', responseText);
+                    throw new Error("Server returned invalid data. Raw response: " + responseText.substring(0, 300));
+                }
+
                 if (result.success) {
                     showStatus(editingId ? 'Invoice updated!' : 'Invoice saved!', 'success');
                     form.reset();
@@ -1089,7 +783,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             SAVE INVOICE
                         `;
                     }
-                    if (itemsContainer) itemsContainer.innerHTML = '';
+                    itemsContainer.innerHTML = '';
                     addItemRow();
                     updateTotal();
                     fetchInvoices();
@@ -1097,14 +791,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     showStatus('Error: ' + (result.error || 'Unknown error'), 'error');
                 }
             } catch (error) {
-                showStatus('Connection Error: ' + error.message, 'error');
+                console.error('Error saving invoice:', error);
+                showStatus('Connection Error: ' + error.message + ' (Try Ctrl+F5 to clear cache)', 'error');
             }
         });
     }
 
-    // --- Initial Load ---
+    // Initial Load
     fetchUserInfo();
     fetchInvoices();
-    fetchCustomers();
     addItemRow();
 });
