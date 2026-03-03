@@ -4,8 +4,9 @@ error_reporting(0);
 ini_set('display_errors', 0);
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 // 1. CORS Headers
-if (isset($_SERVER['HTTP_ORIGIN'])) {
-    header("Access-Control-Allow-Origin: {$_SERVER['HTTP_ORIGIN']}");
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+if ($origin) {
+    header("Access-Control-Allow-Origin: $origin");
     header("Access-Control-Allow-Credentials: true");
 }
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
@@ -20,8 +21,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
         header("Access-Control-Allow-Methods: GET, POST, OPTIONS");         
     if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS']))
         header("Access-Control-Allow-Headers: {$_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS']}");
-    if (isset($_SERVER['HTTP_ORIGIN'])) {
-        header("Access-Control-Allow-Origin: {$_SERVER['HTTP_ORIGIN']}");
+    if ($origin) {
+        header("Access-Control-Allow-Origin: $origin");
         header("Access-Control-Allow-Credentials: true");
     }
     http_response_code(200);
@@ -351,8 +352,8 @@ try {
         echo json_encode(["error" => "Invalid action requested"]);
         break;
 }
-} catch (Exception $e) {
-    ob_clean();
+} catch (Throwable $e) {
+    if (ob_get_length()) ob_clean();
     echo json_encode([
         "error" => "Server Exception",
         "details" => $e->getMessage()

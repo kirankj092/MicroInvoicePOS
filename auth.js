@@ -3,26 +3,35 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Global Error Handler for easier debugging on Hostinger
+    console.log("Auth script initializing...");
+
+    // Global Error Handler
     window.onerror = function(message, source, lineno, colno, error) {
         console.error("Auth Error:", message, "at", source, ":", lineno);
         return false;
     };
 
-    const loginSection = document.getElementById('loginSection');
-    const registerSection = document.getElementById('registerSection');
-    const forgotSection = document.getElementById('forgotSection');
-    const showRegister = document.getElementById('showRegister');
-    const showLogin = document.getElementById('showLogin');
-    const showForgot = document.getElementById('showForgot');
-    const backToLogin = document.getElementById('backToLogin');
-
-    const loginForm = document.getElementById('loginForm');
-    const registerForm = document.getElementById('registerForm');
-    const forgotForm = document.getElementById('forgotForm');
-    const loginStatus = document.getElementById('loginStatus');
-    const regStatus = document.getElementById('regStatus');
-    const forgotStatus = document.getElementById('forgotStatus');
+    // Elements
+    const elements = {
+        loginSection: document.getElementById('loginSection'),
+        registerSection: document.getElementById('registerSection'),
+        forgotSection: document.getElementById('forgotSection'),
+        showRegister: document.getElementById('showRegister'),
+        showLogin: document.getElementById('showLogin'),
+        showForgot: document.getElementById('showForgot'),
+        backToLogin: document.getElementById('backToLogin'),
+        loginForm: document.getElementById('loginForm'),
+        registerForm: document.getElementById('registerForm'),
+        forgotForm: document.getElementById('forgotForm'),
+        loginStatus: document.getElementById('loginStatus'),
+        regStatus: document.getElementById('regStatus'),
+        forgotStatus: document.getElementById('forgotStatus'),
+        forgotEmailStep: document.getElementById('forgotEmailStep'),
+        forgotCodeStep: document.getElementById('forgotCodeStep'),
+        forgotPassStep: document.getElementById('forgotPassStep'),
+        verifyCodeBtn: document.getElementById('verifyCodeBtn'),
+        resetPassBtn: document.getElementById('resetPassBtn')
+    };
 
     const showStatus = (el, message, type) => {
         if (!el) return;
@@ -31,10 +40,9 @@ document.addEventListener('DOMContentLoaded', () => {
         el.style.display = 'block';
     };
 
-    // Cookie Check for Mobile/Desktop
+    // Cookie Check
     if (!navigator.cookieEnabled) {
-        if (loginStatus) showStatus(loginStatus, "Error: Cookies are disabled in your browser. Login will not work.", "error");
-        if (regStatus) showStatus(regStatus, "Error: Cookies are disabled in your browser.", "error");
+        showStatus(elements.loginStatus, "Error: Cookies are disabled in your browser. Login will not work.", "error");
     }
 
     // Check if already logged in
@@ -44,61 +52,57 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.ok) {
                 const data = await response.json();
                 if (data.authenticated) {
+                    console.log("User already authenticated, redirecting...");
                     window.location.replace('index.html');
                 }
             }
         } catch (e) {
-            console.warn("Auth check failed on login page", e);
+            console.warn("Auth check failed", e);
         }
     };
     checkAuth();
-    const forgotEmailStep = document.getElementById('forgotEmailStep');
-    const forgotCodeStep = document.getElementById('forgotCodeStep');
-    const forgotPassStep = document.getElementById('forgotPassStep');
-    const verifyCodeBtn = document.getElementById('verifyCodeBtn');
-    const resetPassBtn = document.getElementById('resetPassBtn');
 
-    // Toggle between Login and Register
-    if (showRegister && loginSection && registerSection) {
-        showRegister.addEventListener('click', (e) => {
+    // Toggle Functions
+    if (elements.showRegister) {
+        elements.showRegister.addEventListener('click', (e) => {
             e.preventDefault();
-            loginSection.classList.add('hidden');
-            registerSection.classList.remove('hidden');
+            elements.loginSection.classList.add('hidden');
+            elements.registerSection.classList.remove('hidden');
         });
     }
 
-    if (showLogin && registerSection && forgotSection && loginSection) {
-        showLogin.addEventListener('click', (e) => {
+    if (elements.showLogin) {
+        elements.showLogin.addEventListener('click', (e) => {
             e.preventDefault();
-            registerSection.classList.add('hidden');
-            forgotSection.classList.add('hidden');
-            loginSection.classList.remove('hidden');
+            elements.registerSection.classList.add('hidden');
+            elements.forgotSection.classList.add('hidden');
+            elements.loginSection.classList.remove('hidden');
         });
     }
 
-    if (showForgot && loginSection && forgotSection && forgotEmailStep && forgotCodeStep && forgotPassStep) {
-        showForgot.addEventListener('click', (e) => {
+    if (elements.showForgot) {
+        elements.showForgot.addEventListener('click', (e) => {
             e.preventDefault();
-            loginSection.classList.add('hidden');
-            forgotSection.classList.remove('hidden');
-            forgotEmailStep.classList.remove('hidden');
-            forgotCodeStep.classList.add('hidden');
-            forgotPassStep.classList.add('hidden');
-            if (forgotStatus) forgotStatus.style.display = 'none';
+            elements.loginSection.classList.add('hidden');
+            elements.forgotSection.classList.remove('hidden');
+            elements.forgotEmailStep.classList.remove('hidden');
+            elements.forgotCodeStep.classList.add('hidden');
+            elements.forgotPassStep.classList.add('hidden');
+            if (elements.forgotStatus) elements.forgotStatus.style.display = 'none';
         });
     }
 
-    if (backToLogin && forgotSection && loginSection) {
-        backToLogin.addEventListener('click', (e) => {
+    if (elements.backToLogin) {
+        elements.backToLogin.addEventListener('click', (e) => {
             e.preventDefault();
-            forgotSection.classList.add('hidden');
-            loginSection.classList.remove('hidden');
+            elements.forgotSection.classList.add('hidden');
+            elements.loginSection.classList.remove('hidden');
         });
     }
 
     // Handle Registration
-    if (registerForm) {
-        registerForm.addEventListener('submit', async (e) => {
+    if (elements.registerForm) {
+        elements.registerForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const regUser = document.getElementById('regUser');
             const regEmail = document.getElementById('regEmail');
@@ -112,60 +116,35 @@ document.addEventListener('DOMContentLoaded', () => {
                 password: regPass.value
             };
 
-        try {
-            const response = await fetch('auth_api.php?action=register', {
-                method: 'POST',
-                body: JSON.stringify(data),
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include'
-            });
-            
-            if (!response.ok) {
-                let errorMsg = 'Server Error ' + response.status;
-                try {
-                    const errorData = await response.json();
-                    if (errorData.error && errorData.error.includes('db_config.php')) {
-                        errorMsg = "Database configuration (db_config.php) is missing on your Hostinger server. Please create it using db_config.example.php.";
-                    } else {
-                        errorMsg = errorData.error || errorData.details || errorMsg;
-                    }
-                } catch (e) {
-                    const rawText = await response.text();
-                    if (rawText) errorMsg = rawText.substring(0, 200);
-                }
-                throw new Error(errorMsg);
-            }
-
-            let result;
-            const responseText = await response.text();
             try {
-                result = JSON.parse(responseText);
-            } catch (e) {
-                console.error('JSON Parse Error. Raw response:', responseText);
-                throw new Error("Server Error: " + responseText.substring(0, 300));
+                const response = await fetch('auth_api.php?action=register', {
+                    method: 'POST',
+                    body: JSON.stringify(data),
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include'
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    showStatus(elements.regStatus, result.message, 'success');
+                    setTimeout(() => elements.showLogin.click(), 2000);
+                } else {
+                    showStatus(elements.regStatus, result.error, 'error');
+                }
+            } catch (error) {
+                showStatus(elements.regStatus, 'Error: ' + error.message, 'error');
             }
-
-            if (result.success) {
-                showStatus(regStatus, result.message, 'success');
-                setTimeout(() => showLogin.click(), 2000);
-            } else {
-                showStatus(regStatus, result.error, 'error');
-            }
-        } catch (error) {
-            console.error('Registration error:', error);
-            showStatus(regStatus, 'Error: ' + error.message, 'error');
-        }
-    });
+        });
     }
 
     // Handle Login
-    if (loginForm) {
-        loginForm.addEventListener('submit', async (e) => {
+    if (elements.loginForm) {
+        elements.loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             console.log("Login form submitted...");
             const loginUser = document.getElementById('loginUser');
             const loginPass = document.getElementById('loginPass');
-            const loginBtn = loginForm.querySelector('button[type="submit"]');
+            const loginBtn = elements.loginForm.querySelector('button[type="submit"]');
             
             if (!loginUser || !loginPass) return;
             if (loginBtn) loginBtn.disabled = true;
@@ -183,82 +162,51 @@ document.addEventListener('DOMContentLoaded', () => {
                     credentials: 'include'
                 });
 
-            if (!response.ok) {
-                let errorMsg = 'Server Error ' + response.status;
-                try {
-                    const errorData = await response.json();
-                    if (errorData.error && errorData.error.includes('db_config.php')) {
-                        errorMsg = "Database configuration (db_config.php) is missing on your Hostinger server. Please create it using db_config.example.php.";
-                    } else {
-                        errorMsg = errorData.error || errorData.details || errorMsg;
-                    }
-                } catch (e) {
-                    const rawText = await response.text();
-                    if (rawText) errorMsg = rawText.substring(0, 200);
+                const result = await response.json();
+                if (result.success) {
+                    showStatus(elements.loginStatus, 'Login successful! Redirecting...', 'success');
+                    setTimeout(() => window.location.replace('index.html'), 500);
+                } else {
+                    showStatus(elements.loginStatus, result.error, 'error');
+                    if (loginBtn) loginBtn.disabled = false;
                 }
-                throw new Error(errorMsg);
-            }
-
-            let result;
-            const responseText = await response.text();
-            try {
-                result = JSON.parse(responseText);
-            } catch (e) {
-                console.error('JSON Parse Error. Raw response:', responseText);
-                throw new Error("Server Error: " + responseText.substring(0, 300));
-            }
-
-            if (result.success) {
-                showStatus(loginStatus, 'Login successful! Redirecting...', 'success');
-                // Small delay to ensure cookies are saved on mobile
-                setTimeout(() => {
-                    window.location.replace('index.html');
-                }, 500);
-            } else {
-                showStatus(loginStatus, result.error, 'error');
+            } catch (error) {
+                showStatus(elements.loginStatus, 'Error: ' + error.message, 'error');
                 if (loginBtn) loginBtn.disabled = false;
             }
-        } catch (error) {
-            console.error('Login error:', error);
-            showStatus(loginStatus, 'Error: ' + error.message, 'error');
-            if (loginBtn) loginBtn.disabled = false;
-        }
-    });
+        });
     }
 
-    // Handle Forgot Password - Step 1: Send Code
-    if (forgotForm) {
-        forgotForm.addEventListener('submit', async (e) => {
+    // Forgot Password Flow
+    if (elements.forgotForm) {
+        elements.forgotForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const forgotEmail = document.getElementById('forgotEmail');
             if (!forgotEmail) return;
             const email = forgotEmail.value;
 
-        try {
-            const response = await fetch('auth_api.php?action=forgot-password', {
-                method: 'POST',
-                body: JSON.stringify({ email }),
-                headers: { 'Content-Type': 'application/json' }
-            });
-            
-            const result = await response.json();
-
-            if (result.success) {
-                showStatus(forgotStatus, "Verification code sent to your email.", 'success');
-                forgotEmailStep.classList.add('hidden');
-                forgotCodeStep.classList.remove('hidden');
-            } else {
-                showStatus(forgotStatus, result.error, 'error');
+            try {
+                const response = await fetch('auth_api.php?action=forgot-password', {
+                    method: 'POST',
+                    body: JSON.stringify({ email }),
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const result = await response.json();
+                if (result.success) {
+                    showStatus(elements.forgotStatus, "Verification code sent to your email.", 'success');
+                    elements.forgotEmailStep.classList.add('hidden');
+                    elements.forgotCodeStep.classList.remove('hidden');
+                } else {
+                    showStatus(elements.forgotStatus, result.error, 'error');
+                }
+            } catch (error) {
+                showStatus(elements.forgotStatus, 'Error: ' + error.message, 'error');
             }
-        } catch (error) {
-            showStatus(forgotStatus, 'Error: ' + error.message, 'error');
-        }
-    });
+        });
     }
 
-    // Handle Forgot Password - Step 2: Verify Code
-    if (verifyCodeBtn) {
-        verifyCodeBtn.addEventListener('click', async () => {
+    if (elements.verifyCodeBtn) {
+        elements.verifyCodeBtn.addEventListener('click', async () => {
             const forgotEmail = document.getElementById('forgotEmail');
             const forgotCode = document.getElementById('forgotCode');
             if (!forgotEmail || !forgotCode) return;
@@ -266,36 +214,33 @@ document.addEventListener('DOMContentLoaded', () => {
             const email = forgotEmail.value;
             const code = forgotCode.value;
 
-        if (!code) {
-            showStatus(forgotStatus, 'Please enter the verification code.', 'error');
-            return;
-        }
-
-        try {
-            const response = await fetch('auth_api.php?action=verify-code', {
-                method: 'POST',
-                body: JSON.stringify({ email, code }),
-                headers: { 'Content-Type': 'application/json' }
-            });
-            
-            const result = await response.json();
-
-            if (result.success) {
-                showStatus(forgotStatus, "Code verified! Enter your new password.", 'success');
-                forgotCodeStep.classList.add('hidden');
-                forgotPassStep.classList.remove('hidden');
-            } else {
-                showStatus(forgotStatus, result.error, 'error');
+            if (!code) {
+                showStatus(elements.forgotStatus, 'Please enter the verification code.', 'error');
+                return;
             }
-        } catch (error) {
-            showStatus(forgotStatus, 'Error: ' + error.message, 'error');
-        }
-    });
+
+            try {
+                const response = await fetch('auth_api.php?action=verify-code', {
+                    method: 'POST',
+                    body: JSON.stringify({ email, code }),
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const result = await response.json();
+                if (result.success) {
+                    showStatus(elements.forgotStatus, "Code verified! Enter your new password.", 'success');
+                    elements.forgotCodeStep.classList.add('hidden');
+                    elements.forgotPassStep.classList.remove('hidden');
+                } else {
+                    showStatus(elements.forgotStatus, result.error, 'error');
+                }
+            } catch (error) {
+                showStatus(elements.forgotStatus, 'Error: ' + error.message, 'error');
+            }
+        });
     }
 
-    // Handle Forgot Password - Step 3: Reset Password
-    if (resetPassBtn) {
-        resetPassBtn.addEventListener('click', async () => {
+    if (elements.resetPassBtn) {
+        elements.resetPassBtn.addEventListener('click', async () => {
             const forgotEmail = document.getElementById('forgotEmail');
             const forgotCode = document.getElementById('forgotCode');
             const forgotNewPass = document.getElementById('forgotNewPass');
@@ -305,33 +250,32 @@ document.addEventListener('DOMContentLoaded', () => {
             const code = forgotCode.value;
             const newPassword = forgotNewPass.value;
 
-        if (!newPassword) {
-            showStatus(forgotStatus, 'Please enter a new password.', 'error');
-            return;
-        }
-
-        try {
-            const response = await fetch('auth_api.php?action=reset-password', {
-                method: 'POST',
-                body: JSON.stringify({ email, code, newPassword }),
-                headers: { 'Content-Type': 'application/json' }
-            });
-            
-            const result = await response.json();
-
-            if (result.success) {
-                showStatus(forgotStatus, "Password reset successful! Redirecting to login...", 'success');
-                setTimeout(() => {
-                    forgotSection.classList.add('hidden');
-                    loginSection.classList.remove('hidden');
-                }, 2000);
-            } else {
-                showStatus(forgotStatus, result.error, 'error');
+            if (!newPassword) {
+                showStatus(elements.forgotStatus, 'Please enter a new password.', 'error');
+                return;
             }
-        } catch (error) {
-            showStatus(forgotStatus, 'Error: ' + error.message, 'error');
-        }
-    });
+
+            try {
+                const response = await fetch('auth_api.php?action=reset-password', {
+                    method: 'POST',
+                    body: JSON.stringify({ email, code, newPassword }),
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const result = await response.json();
+                if (result.success) {
+                    showStatus(elements.forgotStatus, "Password reset successful! Redirecting to login...", 'success');
+                    setTimeout(() => {
+                        elements.forgotSection.classList.add('hidden');
+                        elements.loginSection.classList.remove('hidden');
+                    }, 2000);
+                } else {
+                    showStatus(elements.forgotStatus, result.error, 'error');
+                }
+            } catch (error) {
+                showStatus(elements.forgotStatus, 'Error: ' + error.message, 'error');
+            }
+        });
     }
 
+    console.log("Auth script initialization complete.");
 });
