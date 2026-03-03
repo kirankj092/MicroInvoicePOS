@@ -6,6 +6,12 @@
 document.addEventListener('DOMContentLoaded', () => {
     console.log("Micro Invoice POS Initializing...");
     
+    // Global Error Handler for easier debugging on Hostinger
+    window.onerror = function(message, source, lineno, colno, error) {
+        console.error("Global Error:", message, "at", source, ":", lineno);
+        // Optional: show a small toast or alert if in debug mode
+        return false;
+    };
     // Check for html2canvas
     if (typeof html2canvas === 'undefined') {
         console.warn("html2canvas not loaded yet. Retrying in 1s...");
@@ -18,45 +24,47 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 1000);
     }
 
-    // DOM Elements
-    const form = document.getElementById('invoiceForm');
-    const itemsContainer = document.getElementById('itemsContainer');
-    const addItemBtn = document.getElementById('addItemBtn');
-    const totalDisplay = document.getElementById('totalDisplay');
-    const invoiceList = document.getElementById('invoiceList');
-    const emptyState = document.getElementById('emptyState');
-    const statusMessage = document.getElementById('statusMessage');
-    const saveBtn = document.getElementById('saveBtn');
-    const formPreviewBtn = document.getElementById('formPreviewBtn');
-    const formDownloadBtn = document.getElementById('formDownloadBtn');
-    const formShareBtn = document.getElementById('formShareBtn');
-    const shopNameDisplay = document.getElementById('shopNameDisplay');
-    const shopTagline = document.getElementById('shopTagline');
-    const footerShopName = document.getElementById('footerShopName');
-    const logoutBtn = document.getElementById('logoutBtn');
-    const profileBtn = document.getElementById('profileBtn');
-    const profileModal = document.getElementById('profileModal');
-    const closeProfileModal = document.getElementById('closeProfileModal');
-    const profileForm = document.getElementById('profileForm');
-    const shopLogoHeader = document.getElementById('shopLogoHeader');
-    const headerLogoImg = document.getElementById('headerLogoImg');
-    const defaultIconBox = document.getElementById('defaultIconBox');
-    const menuToggle = document.getElementById('menuToggle');
-    const sidebar = document.getElementById('sidebar');
+    // DOM Elements with safety checks
+    const safeGet = (id) => document.getElementById(id);
+    
+    const form = safeGet('invoiceForm');
+    const itemsContainer = safeGet('itemsContainer');
+    const addItemBtn = safeGet('addItemBtn');
+    const totalDisplay = safeGet('totalDisplay');
+    const invoiceList = safeGet('invoiceList');
+    const emptyState = safeGet('emptyState');
+    const statusMessage = safeGet('statusMessage');
+    const saveBtn = safeGet('saveBtn');
+    const formPreviewBtn = safeGet('formPreviewBtn');
+    const formDownloadBtn = safeGet('formDownloadBtn');
+    const formShareBtn = safeGet('formShareBtn');
+    const shopNameDisplay = safeGet('shopNameDisplay');
+    const shopTagline = safeGet('shopTagline');
+    const footerShopName = safeGet('footerShopName');
+    const logoutBtn = safeGet('logoutBtn');
+    const profileBtn = safeGet('profileBtn');
+    const profileModal = safeGet('profileModal');
+    const closeProfileModal = safeGet('closeProfileModal');
+    const profileForm = safeGet('profileForm');
+    const shopLogoHeader = safeGet('shopLogoHeader');
+    const headerLogoImg = safeGet('headerLogoImg');
+    const defaultIconBox = safeGet('defaultIconBox');
+    const menuToggle = safeGet('menuToggle');
+    const sidebar = safeGet('sidebar');
     const navItems = document.querySelectorAll('.nav-item');
     const sections = document.querySelectorAll('.content-section');
-    const sidebarLogout = document.getElementById('sidebarLogout');
-    const closeSidebar = document.getElementById('closeSidebar');
+    const sidebarLogout = safeGet('sidebarLogout');
+    const closeSidebar = safeGet('closeSidebar');
 
     // Customer Elements
-    const customerList = document.getElementById('customerList');
-    const customerEmptyState = document.getElementById('customerEmptyState');
-    const addCustomerBtn = document.getElementById('addCustomerBtn');
-    const customerFormSection = document.getElementById('customerFormSection');
-    const customerForm = document.getElementById('customerForm');
-    const cancelCustomerBtn = document.getElementById('cancelCustomerBtn');
-    const customerNameInput = document.getElementById('customerName');
-    const customerSuggestions = document.getElementById('customerSuggestions');
+    const customerList = safeGet('customerList');
+    const customerEmptyState = safeGet('customerEmptyState');
+    const addCustomerBtn = safeGet('addCustomerBtn');
+    const customerFormSection = safeGet('customerFormSection');
+    const customerForm = safeGet('customerForm');
+    const cancelCustomerBtn = safeGet('cancelCustomerBtn');
+    const customerNameInput = safeGet('customerName');
+    const customerSuggestions = safeGet('customerSuggestions');
 
     let editingId = null;
     let userProfile = null;
@@ -113,6 +121,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const fetchUserInfo = async () => {
         try {
             const response = await fetch('auth_api.php?action=check');
+            if (!response.ok) {
+                try {
+                    const errorData = await response.json();
+                    if (errorData.error && errorData.error.includes('db_config.php')) {
+                        showStatus('Database configuration (db_config.php) missing on server!', 'error');
+                        return;
+                    }
+                } catch (e) {}
+            }
             const data = await response.json();
             if (data.authenticated) {
                 userProfile = data.profile;

@@ -3,6 +3,12 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Global Error Handler for easier debugging on Hostinger
+    window.onerror = function(message, source, lineno, colno, error) {
+        console.error("Auth Error:", message, "at", source, ":", lineno);
+        return false;
+    };
+
     const loginSection = document.getElementById('loginSection');
     const registerSection = document.getElementById('registerSection');
     const forgotSection = document.getElementById('forgotSection');
@@ -25,43 +31,58 @@ document.addEventListener('DOMContentLoaded', () => {
     const resetPassBtn = document.getElementById('resetPassBtn');
 
     // Toggle between Login and Register
-    showRegister.addEventListener('click', (e) => {
-        e.preventDefault();
-        loginSection.classList.add('hidden');
-        registerSection.classList.remove('hidden');
-    });
+    if (showRegister && loginSection && registerSection) {
+        showRegister.addEventListener('click', (e) => {
+            e.preventDefault();
+            loginSection.classList.add('hidden');
+            registerSection.classList.remove('hidden');
+        });
+    }
 
-    showLogin.addEventListener('click', (e) => {
-        e.preventDefault();
-        registerSection.classList.add('hidden');
-        forgotSection.classList.add('hidden');
-        loginSection.classList.remove('hidden');
-    });
+    if (showLogin && registerSection && forgotSection && loginSection) {
+        showLogin.addEventListener('click', (e) => {
+            e.preventDefault();
+            registerSection.classList.add('hidden');
+            forgotSection.classList.add('hidden');
+            loginSection.classList.remove('hidden');
+        });
+    }
 
-    showForgot.addEventListener('click', (e) => {
-        e.preventDefault();
-        loginSection.classList.add('hidden');
-        forgotSection.classList.remove('hidden');
-        forgotEmailStep.classList.remove('hidden');
-        forgotCodeStep.classList.add('hidden');
-        forgotPassStep.classList.add('hidden');
-        forgotStatus.style.display = 'none';
-    });
+    if (showForgot && loginSection && forgotSection && forgotEmailStep && forgotCodeStep && forgotPassStep) {
+        showForgot.addEventListener('click', (e) => {
+            e.preventDefault();
+            loginSection.classList.add('hidden');
+            forgotSection.classList.remove('hidden');
+            forgotEmailStep.classList.remove('hidden');
+            forgotCodeStep.classList.add('hidden');
+            forgotPassStep.classList.add('hidden');
+            if (forgotStatus) forgotStatus.style.display = 'none';
+        });
+    }
 
-    backToLogin.addEventListener('click', (e) => {
-        e.preventDefault();
-        forgotSection.classList.add('hidden');
-        loginSection.classList.remove('hidden');
-    });
+    if (backToLogin && forgotSection && loginSection) {
+        backToLogin.addEventListener('click', (e) => {
+            e.preventDefault();
+            forgotSection.classList.add('hidden');
+            loginSection.classList.remove('hidden');
+        });
+    }
 
     // Handle Registration
-    registerForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const data = {
-            username: document.getElementById('regUser').value,
-            email: document.getElementById('regEmail').value,
-            password: document.getElementById('regPass').value
-        };
+    if (registerForm) {
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const regUser = document.getElementById('regUser');
+            const regEmail = document.getElementById('regEmail');
+            const regPass = document.getElementById('regPass');
+            
+            if (!regUser || !regEmail || !regPass) return;
+
+            const data = {
+                username: regUser.value,
+                email: regEmail.value,
+                password: regPass.value
+            };
 
         try {
             const response = await fetch('auth_api.php?action=register', {
@@ -74,7 +95,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 let errorMsg = 'Server Error ' + response.status;
                 try {
                     const errorData = await response.json();
-                    errorMsg = errorData.error || errorData.details || errorMsg;
+                    if (errorData.error && errorData.error.includes('db_config.php')) {
+                        errorMsg = "Database configuration (db_config.php) is missing on your Hostinger server. Please create it using db_config.example.php.";
+                    } else {
+                        errorMsg = errorData.error || errorData.details || errorMsg;
+                    }
                 } catch (e) {
                     const rawText = await response.text();
                     if (rawText) errorMsg = rawText.substring(0, 200);
@@ -104,12 +129,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Handle Login
-    loginForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const data = {
-            username: document.getElementById('loginUser').value,
-            password: document.getElementById('loginPass').value
-        };
+    if (loginForm) {
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const loginUser = document.getElementById('loginUser');
+            const loginPass = document.getElementById('loginPass');
+            
+            if (!loginUser || !loginPass) return;
+
+            const data = {
+                username: loginUser.value,
+                password: loginPass.value
+            };
 
         try {
             const response = await fetch('auth_api.php?action=login', {
@@ -122,7 +153,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 let errorMsg = 'Server Error ' + response.status;
                 try {
                     const errorData = await response.json();
-                    errorMsg = errorData.error || errorData.details || errorMsg;
+                    if (errorData.error && errorData.error.includes('db_config.php')) {
+                        errorMsg = "Database configuration (db_config.php) is missing on your Hostinger server. Please create it using db_config.example.php.";
+                    } else {
+                        errorMsg = errorData.error || errorData.details || errorMsg;
+                    }
                 } catch (e) {
                     const rawText = await response.text();
                     if (rawText) errorMsg = rawText.substring(0, 200);
@@ -152,9 +187,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Handle Forgot Password - Step 1: Send Code
-    forgotForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const email = document.getElementById('forgotEmail').value;
+    if (forgotForm) {
+        forgotForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const forgotEmail = document.getElementById('forgotEmail');
+            if (!forgotEmail) return;
+            const email = forgotEmail.value;
 
         try {
             const response = await fetch('auth_api.php?action=forgot-password', {
@@ -178,9 +216,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Handle Forgot Password - Step 2: Verify Code
-    verifyCodeBtn.addEventListener('click', async () => {
-        const email = document.getElementById('forgotEmail').value;
-        const code = document.getElementById('forgotCode').value;
+    if (verifyCodeBtn) {
+        verifyCodeBtn.addEventListener('click', async () => {
+            const forgotEmail = document.getElementById('forgotEmail');
+            const forgotCode = document.getElementById('forgotCode');
+            if (!forgotEmail || !forgotCode) return;
+            
+            const email = forgotEmail.value;
+            const code = forgotCode.value;
 
         if (!code) {
             showStatus(forgotStatus, 'Please enter the verification code.', 'error');
@@ -209,10 +252,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Handle Forgot Password - Step 3: Reset Password
-    resetPassBtn.addEventListener('click', async () => {
-        const email = document.getElementById('forgotEmail').value;
-        const code = document.getElementById('forgotCode').value;
-        const newPassword = document.getElementById('forgotNewPass').value;
+    if (resetPassBtn) {
+        resetPassBtn.addEventListener('click', async () => {
+            const forgotEmail = document.getElementById('forgotEmail');
+            const forgotCode = document.getElementById('forgotCode');
+            const forgotNewPass = document.getElementById('forgotNewPass');
+            if (!forgotEmail || !forgotCode || !forgotNewPass) return;
+
+            const email = forgotEmail.value;
+            const code = forgotCode.value;
+            const newPassword = forgotNewPass.value;
 
         if (!newPassword) {
             showStatus(forgotStatus, 'Please enter a new password.', 'error');

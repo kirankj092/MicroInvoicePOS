@@ -45,6 +45,62 @@ if ($conn->connect_error) {
     ]));
 }
 
+// Ensure tables exist (Automatic Migration for Hostinger)
+$conn->query("CREATE TABLE IF NOT EXISTS users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    shop_name VARCHAR(255) DEFAULT 'Micro Invoice POS',
+    address TEXT,
+    phone VARCHAR(20),
+    gstin VARCHAR(50),
+    shop_logo LONGTEXT,
+    signature LONGTEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+$conn->query("CREATE TABLE IF NOT EXISTS invoices (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    customer_name VARCHAR(255) NOT NULL,
+    total DECIMAL(10, 2) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+$conn->query("CREATE TABLE IF NOT EXISTS invoice_items (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    invoice_id INT NOT NULL,
+    item_name VARCHAR(255) NOT NULL,
+    price DECIMAL(10, 2) NOT NULL,
+    quantity INT NOT NULL,
+    discount DECIMAL(10, 2) DEFAULT 0,
+    gst_rate INT DEFAULT 0,
+    subtotal DECIMAL(10, 2) NOT NULL,
+    FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+$conn->query("CREATE TABLE IF NOT EXISTS customers (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    phone VARCHAR(20) NOT NULL,
+    email VARCHAR(100),
+    address TEXT,
+    dob DATE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+$conn->query("CREATE TABLE IF NOT EXISTS password_resets (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(100) NOT NULL,
+    code VARCHAR(10) NOT NULL,
+    expires_at DATETIME NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
 // Helper function to read JSON body from JavaScript fetch
 function getJsonInput() {
     return json_decode(file_get_contents('php://input'), true);
@@ -84,6 +140,74 @@ try {
             }
         }
         echo json_encode($invoices);
+        $stmt->close();
+        break;
+
+    case 'customers_read':
+        $user_id = $_SESSION['user_id'];
+        $stmt = $conn->prepare("SELECT * FROM customers WHERE user_id = ? ORDER BY name ASC");
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $customers = [];
+        while ($row = $result->fetch_assoc()) {
+            $customers[] = $row;
+        }
+        echo json_encode($customers);
+        $stmt->close();
+        break;
+
+    case 'customer_create':
+        $data = getJsonInput();
+        $user_id = $_SESSION['user_id'];
+        $name = $data['name'] ?? '';
+        $phone = $data['phone'] ?? '';
+        $email = $data['email'] ?? '';
+        $address = $data['address'] ?? '';
+        $dob = $data['dob'] ?? null;
+
+        $stmt = $conn->prepare("INSERT INTO customers (user_id, name, phone, email, address, dob) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("isssss", $user_id, $name, $phone, $email, $address, $dob);
+        if ($stmt->execute()) {
+            echo json_encode(["success" => true, "id" => $stmt->insert_id]);
+        } else {
+            echo json_encode(["error" => $stmt->error]);
+        }
+        $stmt->close();
+        break;
+
+    case 'customer_update':
+        $data = getJsonInput();
+        $user_id = $_SESSION['user_id'];
+        $id = $data['id'] ?? 0;
+        $name = $data['name'] ?? '';
+        $phone = $data['phone'] ?? '';
+        $email = $data['email'] ?? '';
+        $address = $data['address'] ?? '';
+        $dob = $data['dob'] ?? null;
+
+        $stmt = $conn->prepare("UPDATE customers SET name=?, phone=?, email=?, address=?, dob=? WHERE id=? AND user_id=?");
+        $stmt->bind_param("sssssii", $name, $phone, $email, $address, $dob, $id, $user_id);
+        if ($stmt->execute()) {
+            echo json_encode(["success" => true]);
+        } else {
+            echo json_encode(["error" => $stmt->error]);
+        }
+        $stmt->close();
+        break;
+
+    case 'customer_delete':
+        $data = getJsonInput();
+        $user_id = $_SESSION['user_id'];
+        $id = $data['id'] ?? 0;
+
+        $stmt = $conn->prepare("DELETE FROM customers WHERE id=? AND user_id=?");
+        $stmt->bind_param("ii", $id, $user_id);
+        if ($stmt->execute()) {
+            echo json_encode(["success" => true]);
+        } else {
+            echo json_encode(["error" => $stmt->error]);
+        }
         $stmt->close();
         break;
 

@@ -18,8 +18,8 @@ if (!isset($_SESSION['user_id'])) {
     die(json_encode(["error" => "Unauthorized access. Please login."]));
 }
 
-// Session Hijacking Prevention: Check if session is too old (e.g., 30 mins)
-$timeout = 1800; // 30 minutes
+// Session Hijacking Prevention: Check if session is too old (e.g., 24 hours)
+$timeout = 86400; // 24 hours
 if (isset($_SESSION['last_regen']) && (time() - $_SESSION['last_regen'] > $timeout)) {
     session_unset();
     session_destroy();
