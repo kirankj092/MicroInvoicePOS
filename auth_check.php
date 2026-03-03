@@ -5,15 +5,12 @@
  */
 
 if (session_status() === PHP_SESSION_NONE) {
-    $is_https = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') || 
-                 (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
-    
     ini_set('session.cookie_httponly', 1);
     ini_set('session.use_only_cookies', 1);
     ini_set('session.cookie_secure', 1);
-    ini_set('session.gc_maxlifetime', 2592000);
+    ini_set('session.gc_maxlifetime', 86400 * 30);
     session_set_cookie_params([
-        'lifetime' => 2592000,
+        'lifetime' => 86400 * 30,
         'path' => '/',
         'domain' => '',
         'secure' => true,
@@ -27,16 +24,7 @@ if (session_status() === PHP_SESSION_NONE) {
 if (!isset($_SESSION['user_id'])) {
     header('Content-Type: application/json');
     http_response_code(401);
-    die(json_encode(["error" => "Unauthorized access. Please login."]));
-}
-
-// Session Hijacking Prevention: Check if session is too old (e.g., 24 hours)
-$timeout = 86400; // 24 hours
-if (isset($_SESSION['last_regen']) && (time() - $_SESSION['last_regen'] > $timeout)) {
-    session_unset();
-    session_destroy();
-    header('Content-Type: application/json');
-    http_response_code(401);
-    die(json_encode(["error" => "Session expired. Please login again."]));
+    echo json_encode(["error" => "Unauthorized access. Please login."]);
+    exit;
 }
 ?>
