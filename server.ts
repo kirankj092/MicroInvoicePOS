@@ -101,27 +101,36 @@ const saveSession = () => {
 
 // Mock auth_api.php
 app.all("/auth_api.php", async (req, res) => {
-    const action = req.query.action;
+    const action = req.query.action || req.body.action;
     const method = req.method;
 
     try {
-        console.log(`Auth API call: action=${action}, method=${method}, body=${JSON.stringify(req.body)}`);
+        console.log(`[AuthAPI] ${method} request - Action: ${action}`);
+        
         if (action === 'register') {
             const { username, email, password } = req.body;
+            if (!username || !email || !password) {
+                return res.status(400).json({ error: "Missing required fields" });
+            }
             const stmt = db.prepare("INSERT INTO users (username, email, password) VALUES (?, ?, ?)");
-            stmt.run(username, email, password); // In mock, we don't hash for simplicity
-            return res.json({ success: true });
+            stmt.run(username, email, password);
+            return res.json({ success: true, message: "Registration successful" });
         }
 
         if (action === 'login') {
             const { username, password } = req.body;
+            if (!username || !password) {
+                return res.status(400).json({ error: "Username and password are required" });
+            }
             const user = db.prepare("SELECT * FROM users WHERE username = ? OR email = ?").get(username, username) as any;
             if (user && user.password === password) {
                 mockSession.user_id = user.id;
                 mockSession.username = user.username;
                 saveSession();
-                return res.json({ success: true });
+                console.log(`[AuthAPI] Login successful for user: ${user.username}`);
+                return res.json({ success: true, message: "Login successful" });
             }
+            console.log(`[AuthAPI] Login failed for user: ${username}`);
             return res.json({ error: "Invalid credentials" });
         }
 
@@ -215,16 +224,17 @@ app.all("/auth_api.php", async (req, res) => {
 
 // Mock api.php for the preview environment
 app.all("/api.php", (req, res) => {
-    const action = req.query.action;
+    const action = req.query.action || req.body.action;
     const method = req.method;
 
     // Auth check for mock API
     if (!mockSession.user_id) {
+        console.log(`[API] Unauthorized access attempt: action=${action}`);
         return res.status(401).json({ error: "Unauthorized" });
     }
 
     try {
-        console.log(`API call: action=${action}, method=${method}, user_id=${mockSession.user_id}`);
+        console.log(`[API] ${method} request - Action: ${action}, user_id=${mockSession.user_id}`);
         if (action === 'read') {
             const invoices = db.prepare("SELECT * FROM invoices WHERE user_id = ? ORDER BY created_at DESC").all(mockSession.user_id);
             return res.json(invoices);

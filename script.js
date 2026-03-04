@@ -221,13 +221,16 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (!response.ok) {
                 let errorMsg = 'Server Error ' + response.status;
+                const responseText = await response.text();
                 try {
-                    const errorData = await response.json();
+                    const errorData = JSON.parse(responseText);
                     errorMsg = errorData.error || errorData.details || errorMsg;
                 } catch (e) {
-                    // If not JSON, get raw text
-                    const rawText = await response.text();
-                    if (rawText) errorMsg = rawText.substring(0, 200);
+                    if (responseText && responseText.trim().startsWith('<!DOCTYPE html>')) {
+                        errorMsg = "The server returned an unexpected HTML page. This might be due to a configuration issue or a server error.";
+                    } else if (responseText) {
+                        errorMsg = responseText.substring(0, 200);
+                    }
                 }
                 throw new Error(errorMsg);
             }
@@ -238,6 +241,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 invoices = JSON.parse(responseText);
             } catch (e) {
                 console.error('JSON Parse Error. Raw response:', responseText);
+                if (responseText.trim().startsWith('<!DOCTYPE html>')) {
+                    throw new Error("Server returned HTML instead of JSON. Please check the server logs.");
+                }
                 throw new Error("Server returned invalid data. Raw response: " + responseText.substring(0, 300));
             }
             allInvoices = invoices;
@@ -765,12 +771,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (!response.ok) {
                     let errorMsg = 'Server Error ' + response.status;
+                    const responseText = await response.text();
                     try {
-                        const errorData = await response.json();
+                        const errorData = JSON.parse(responseText);
                         errorMsg = errorData.error || errorData.details || errorMsg;
                     } catch (e) {
-                        const rawText = await response.text();
-                        if (rawText) errorMsg = rawText.substring(0, 200);
+                        if (responseText && responseText.trim().startsWith('<!DOCTYPE html>')) {
+                            errorMsg = "The server returned an unexpected HTML page. This might be due to a configuration issue or a server error.";
+                        } else if (responseText) {
+                            errorMsg = responseText.substring(0, 200);
+                        }
                     }
                     throw new Error(errorMsg);
                 }
@@ -781,6 +791,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     result = JSON.parse(responseText);
                 } catch (e) {
                     console.error('JSON Parse Error. Raw response:', responseText);
+                    if (responseText.trim().startsWith('<!DOCTYPE html>')) {
+                        throw new Error("Server returned HTML instead of JSON. Please check the server logs.");
+                    }
                     throw new Error("Server returned invalid data. Raw response: " + responseText.substring(0, 300));
                 }
 
