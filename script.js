@@ -813,15 +813,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const fetchCustomers = async () => {
         try {
-            console.log("Fetching customers...");
-            const response = await fetch('api.php?action=customers_read&t=' + Date.now());
-            console.log("Fetch customers response status:", response.status);
+            const response = await fetch('api.php?action=customers_read');
             if (response.ok) {
                 allCustomers = await response.json();
-                console.log("Customers fetched:", allCustomers);
                 renderCustomers();
-            } else {
-                console.error("Failed to fetch customers:", response.statusText);
             }
         } catch (error) {
             console.error('Error fetching customers:', error);
@@ -975,14 +970,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 address: document.getElementById('custAddress').value,
                 dob: document.getElementById('custDob').value
             };
-            console.log("Form values captured:", {
-                name: data.name,
-                phone: data.phone,
-                email: data.email,
-                address: data.address,
-                dob: data.dob
-            });
-            console.log("Saving customer data:", JSON.stringify(data), "ID:", id);
+            console.log("Saving customer data:", data, "ID:", id);
 
             const action = id ? 'customers_update' : 'customers_create';
             if (id) data.id = id;
