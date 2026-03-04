@@ -6,7 +6,4 @@ node_modules/
 dist/
 
 # Authentication files (managed on server)
-auth.html
-auth.js
-auth_api.php
-auth_check.php
+
