@@ -14,20 +14,11 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
     customer_name TEXT NOT NULL,
-    total REAL NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  );
-
-  CREATE TABLE IF NOT EXISTS invoice_items (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    invoice_id INTEGER NOT NULL,
     item_name TEXT NOT NULL,
     price REAL NOT NULL,
     quantity INTEGER NOT NULL,
-    discount REAL DEFAULT 0,
-    gst_rate INTEGER DEFAULT 0,
-    subtotal REAL NOT NULL,
-    FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON DELETE CASCADE
+    total REAL NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 
   CREATE TABLE IF NOT EXISTS users (
@@ -93,12 +84,6 @@ const PORT = 3000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Request logging middleware
-app.use((req, res, next) => {
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-    next();
-});
-
 // Mock session for preview - Persist to file to survive restarts
 const SESSION_FILE = './mock_session.json';
 let mockSession: any = {};
@@ -143,7 +128,7 @@ const saveSession = () => {
 ensureDefaultUser();
 
 // Mock auth_api.php
-app.all(["/auth_api.php", "/auth_api"], async (req, res) => {
+app.all("/auth_api.php", async (req, res) => {
     const action = req.query.action;
     const method = req.method;
 
@@ -257,7 +242,7 @@ app.all(["/auth_api.php", "/auth_api"], async (req, res) => {
 });
 
 // Mock api.php for the preview environment
-app.all(["/api.php", "/api"], (req, res) => {
+app.all("/api.php", (req, res) => {
     const action = req.query.action;
     const method = req.method;
 
@@ -272,10 +257,7 @@ app.all(["/api.php", "/api"], (req, res) => {
         console.log("Request Body:", JSON.stringify(req.body));
 
         if (action === 'read') {
-            const invoices = db.prepare("SELECT * FROM invoices WHERE user_id = ? ORDER BY created_at DESC").all(mockSession.user_id) as any[];
-            for (const inv of invoices) {
-                inv.items = db.prepare("SELECT * FROM invoice_items WHERE invoice_id = ?").all(inv.id);
-            }
+            const invoices = db.prepare("SELECT * FROM invoices WHERE user_id = ? ORDER BY created_at DESC").all(mockSession.user_id);
             return res.json(invoices);
         }
 
@@ -328,28 +310,18 @@ app.all(["/api.php", "/api"], (req, res) => {
             }
 
             if (action === 'create') {
-                const { customer_name, items, total } = data;
-                const stmt = db.prepare("INSERT INTO invoices (user_id, customer_name, total) VALUES (?, ?, ?)");
-                const result = stmt.run(mockSession.user_id, customer_name, total);
-                const invoice_id = result.lastInsertRowid;
-
-                const itemStmt = db.prepare("INSERT INTO invoice_items (invoice_id, item_name, price, quantity, discount, gst_rate, subtotal) VALUES (?, ?, ?, ?, ?, ?, ?)");
-                for (const item of items) {
-                    itemStmt.run(invoice_id, item.item_name, item.price, item.quantity, item.discount || 0, item.gst_rate || 0, item.subtotal);
-                }
-                return res.json({ success: true, id: invoice_id });
+                const { customer_name, item_name, price, quantity } = data;
+                const total = price * quantity;
+                const stmt = db.prepare("INSERT INTO invoices (user_id, customer_name, item_name, price, quantity, total) VALUES (?, ?, ?, ?, ?, ?)");
+                const result = stmt.run(mockSession.user_id, customer_name, item_name, price, quantity, total);
+                return res.json({ success: true, id: result.lastInsertRowid });
             }
 
             if (action === 'update') {
-                const { id, customer_name, items, total } = data;
-                db.prepare("UPDATE invoices SET customer_name=?, total=? WHERE id=? AND user_id=?").run(customer_name, total, id, mockSession.user_id);
-                
-                // Delete old items and insert new ones
-                db.prepare("DELETE FROM invoice_items WHERE invoice_id = ?").run(id);
-                const itemStmt = db.prepare("INSERT INTO invoice_items (invoice_id, item_name, price, quantity, discount, gst_rate, subtotal) VALUES (?, ?, ?, ?, ?, ?, ?)");
-                for (const item of items) {
-                    itemStmt.run(id, item.item_name, item.price, item.quantity, item.discount || 0, item.gst_rate || 0, item.subtotal);
-                }
+                const { id, customer_name, item_name, price, quantity } = data;
+                const total = price * quantity;
+                const stmt = db.prepare("UPDATE invoices SET customer_name=?, item_name=?, price=?, quantity=?, total=? WHERE id=? AND user_id=?");
+                stmt.run(customer_name, item_name, price, quantity, total, id, mockSession.user_id);
                 return res.json({ success: true });
             }
 
@@ -367,13 +339,14 @@ app.all(["/api.php", "/api"], (req, res) => {
     }
 });
 
+app.use(express.static(path.join(process.cwd(), ".")));
+
 // Debug route to check database state
-app.get(["/test_db.php", "/test_db"], (req, res) => {
+app.get("/test_db.php", (req, res) => {
     try {
         const users = db.prepare("SELECT id, username, email FROM users").all();
         const customers = db.prepare("SELECT * FROM customers").all();
         const invoices = db.prepare("SELECT * FROM invoices").all();
-        const invoice_items = db.prepare("SELECT * FROM invoice_items").all();
         const profiles = db.prepare("SELECT * FROM profiles").all();
         
         let html = `
@@ -415,12 +388,6 @@ app.get(["/test_db.php", "/test_db"], (req, res) => {
                     ${invoices.map((i: any) => `<tr><td>${i.id}</td><td>${i.user_id}</td><td>${i.customer_name}</td><td>${i.total}</td><td>${i.created_at}</td></tr>`).join('')}
                 </table>
 
-                <h2>Invoice Items (${invoice_items.length})</h2>
-                <table>
-                    <tr><th>ID</th><th>Invoice ID</th><th>Item Name</th><th>Price</th><th>Qty</th><th>Subtotal</th></tr>
-                    ${invoice_items.map((ii: any) => `<tr><td>${ii.id}</td><td>${ii.invoice_id}</td><td>${ii.item_name}</td><td>${ii.price}</td><td>${ii.quantity}</td><td>${ii.subtotal}</td></tr>`).join('')}
-                </table>
-
                 <h2>Profiles (${profiles.length})</h2>
                 <table>
                     <tr><th>User ID</th><th>Shop Name</th><th>Email</th></tr>
@@ -433,17 +400,6 @@ app.get(["/test_db.php", "/test_db"], (req, res) => {
     } catch (err: any) {
         res.status(500).send(`<h1>Error Debugging Database</h1><pre>${err.message}</pre>`);
     }
-});
-
-app.use(express.static(path.join(process.cwd(), ".")));
-
-// 404 Handler
-app.use((req, res) => {
-    console.log(`[404] ${req.method} ${req.url}`);
-    if (req.url.startsWith('/api') || req.url.startsWith('/auth_api')) {
-        return res.status(404).json({ error: "API Route not found", url: req.url });
-    }
-    res.status(404).send(`<h1>404 - Page Not Found</h1><p>The requested URL ${req.url} was not found on this server.</p>`);
 });
 
 app.listen(PORT, "0.0.0.0", () => {
