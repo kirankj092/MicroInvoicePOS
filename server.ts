@@ -95,9 +95,37 @@ try {
     mockSession = {};
 }
 
+// Auto-login/Seed default user for preview environment
+const ensureDefaultUser = () => {
+    try {
+        let user = db.prepare("SELECT * FROM users LIMIT 1").get() as any;
+        if (!user) {
+            console.log("Seeding default user...");
+            const stmt = db.prepare("INSERT INTO users (username, email, password) VALUES (?, ?, ?)");
+            const result = stmt.run("admin", "admin@example.com", "admin123");
+            user = { id: result.lastInsertRowid, username: "admin" };
+            
+            // Seed a default profile too
+            db.prepare("INSERT INTO profiles (user_id, shop_name, email) VALUES (?, ?, ?)")
+              .run(user.id, "Micro Invoice POS", "admin@example.com");
+        }
+        
+        if (!mockSession.user_id) {
+            console.log("Auto-logging in default user:", user.username);
+            mockSession.user_id = user.id;
+            mockSession.username = user.username;
+            saveSession();
+        }
+    } catch (err) {
+        console.error("Error ensuring default user:", err);
+    }
+};
+
 const saveSession = () => {
     fs.writeFileSync(SESSION_FILE, JSON.stringify(mockSession));
 };
+
+ensureDefaultUser();
 
 // Mock auth_api.php
 app.all("/auth_api.php", async (req, res) => {
