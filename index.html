@@ -39,6 +39,10 @@
                 </div>
             </div>
             <div class="user-actions">
+                <button id="customersBtn" class="customers-btn" title="Customer Management">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    <span>Customers</span>
+                </button>
                 <button id="profileBtn" class="profile-btn" title="Shop Profile">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                     <span>Profile</span>
@@ -63,7 +67,10 @@
                                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                                 Customer Name
                             </label>
-                            <input type="text" id="customerName" required placeholder="e.g. John Doe">
+                            <div class="typeahead-container">
+                                <input type="text" id="customerName" required placeholder="e.g. John Doe" autocomplete="off">
+                                <div id="customerSuggestions" class="suggestions-list"></div>
+                            </div>
                         </div>
 
                         <div class="items-section">
@@ -193,6 +200,73 @@
                         </div>
                     </div>
                     <button type="submit" class="btn-primary">SAVE PROFILE</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Customers List Modal -->
+        <div id="customersModal" class="modal">
+            <div class="modal-content" style="max-width: 800px;">
+                <div class="modal-header">
+                    <h2>Customer Management</h2>
+                    <div style="display: flex; gap: 10px;">
+                        <button id="addNewCustomerBtn" class="btn-primary" style="padding: 5px 15px; font-size: 12px;">+ ADD NEW</button>
+                        <button id="closeCustomersModal" class="close-btn">&times;</button>
+                    </div>
+                </div>
+                <div class="modal-body">
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Phone</th>
+                                    <th>Email</th>
+                                    <th class="text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="customerList">
+                                <!-- Customers will be injected here -->
+                            </tbody>
+                        </table>
+                        <div id="customerEmptyState" class="empty-state">No customers found.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Customer Form Modal -->
+        <div id="customerFormModal" class="modal">
+            <div class="modal-content" style="max-width: 500px;">
+                <div class="modal-header">
+                    <h2 id="customerFormTitle">Add New Customer</h2>
+                    <button id="closeCustomerFormModal" class="close-btn">&times;</button>
+                </div>
+                <form id="customerForm" class="modal-body">
+                    <input type="hidden" id="customerId">
+                    <div class="input-group">
+                        <label>Full Name</label>
+                        <input type="text" id="custName" required placeholder="Enter Customer Name">
+                    </div>
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label>Phone Number</label>
+                            <input type="text" id="custPhone" placeholder="Phone Number">
+                        </div>
+                        <div class="input-group">
+                            <label>Email Address</label>
+                            <input type="email" id="custEmail" placeholder="Email Address">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>Address</label>
+                        <textarea id="custAddress" rows="2" placeholder="Customer Address"></textarea>
+                    </div>
+                    <div class="input-group">
+                        <label>Date of Birth</label>
+                        <input type="date" id="custDob">
+                    </div>
+                    <button type="submit" class="btn-primary" id="saveCustomerBtn">SAVE CUSTOMER</button>
                 </form>
             </div>
         </div>

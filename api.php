@@ -57,6 +57,15 @@ try {
     switch ($action) {
     case 'read':
         $user_id = $_SESSION['user_id'];
+
+        // Auto-migrate orphaned invoices (from pre-auth version) to current user
+        $migration_stmt = $conn->prepare("UPDATE invoices SET user_id = ? WHERE user_id = 0 OR user_id IS NULL");
+        if ($migration_stmt) {
+            $migration_stmt->bind_param("i", $user_id);
+            $migration_stmt->execute();
+            $migration_stmt->close();
+        }
+
         $stmt = $conn->prepare("SELECT * FROM invoices WHERE user_id = ? ORDER BY created_at DESC");
         if (!$stmt) {
             echo json_encode(["error" => "SQL Error: " . $conn->error]);

@@ -4,3 +4,6 @@ mock_session.json
 invoices.db
 node_modules/
 dist/
+
+# Authentication files (managed on server)
+

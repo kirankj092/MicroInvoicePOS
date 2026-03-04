@@ -72,12 +72,12 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (!response.ok) {
                 let errorMsg = 'Server Error ' + response.status;
+                const responseText = await response.text();
                 try {
-                    const errorData = await response.json();
+                    const errorData = JSON.parse(responseText);
                     errorMsg = errorData.error || errorData.details || errorMsg;
                 } catch (e) {
-                    const rawText = await response.text();
-                    if (rawText) errorMsg = rawText.substring(0, 200);
+                    if (responseText) errorMsg = responseText.substring(0, 200);
                 }
                 throw new Error(errorMsg);
             }
@@ -120,12 +120,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!response.ok) {
                 let errorMsg = 'Server Error ' + response.status;
+                const responseText = await response.text();
                 try {
-                    const errorData = await response.json();
+                    const errorData = JSON.parse(responseText);
                     errorMsg = errorData.error || errorData.details || errorMsg;
                 } catch (e) {
-                    const rawText = await response.text();
-                    if (rawText) errorMsg = rawText.substring(0, 200);
+                    if (responseText) errorMsg = responseText.substring(0, 200);
                 }
                 throw new Error(errorMsg);
             }
@@ -248,3 +248,4 @@ document.addEventListener('DOMContentLoaded', () => {
         el.style.display = 'block';
     };
 });
+
