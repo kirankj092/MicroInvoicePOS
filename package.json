@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "php -S 0.0.0.0:3000",
     "build": "echo 'No build needed for this PHP app'",
-    "lint": "echo 'No lint needed for this PHP app'"
+    "lint": "php -l *.php"
   },
   "dependencies": {},
   "devDependencies": {}

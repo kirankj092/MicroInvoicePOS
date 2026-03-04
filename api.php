@@ -1,4 +1,5 @@
 <?php
+ob_start();
 // api.php
 require_once 'db_config.php';
 
@@ -149,8 +150,7 @@ try {
 
     echo json_encode(['error' => 'Invalid action or method']);
 
-} catch (Exception $e) {
+} catch (Throwable $e) {
     http_response_code(500);
-    echo json_encode(['error' => $e->getMessage()]);
+    echo json_encode(['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
 }
-?>

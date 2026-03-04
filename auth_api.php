@@ -1,4 +1,5 @@
 <?php
+ob_start();
 // auth_api.php
 require_once 'db_config.php';
 
@@ -26,24 +27,35 @@ try {
     }
 
     if ($action === 'login' && $method === 'POST') {
+        error_log("Login attempt started");
         $data = json_decode(file_get_contents('php://input'), true);
         $username = $data['username'] ?? '';
         $password = $data['password'] ?? '';
 
         if (!$username || !$password) {
+            error_log("Login failed: Missing username or password");
             echo json_encode(['error' => 'Username and password are required']);
             exit;
         }
 
+        error_log("Searching for user: $username");
         $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ? OR email = ?");
         $stmt->execute([$username, $username]);
         $user = $stmt->fetch();
 
-        if ($user && $user['password'] === $password) {
-            $_SESSION['user_id'] = $user['id'];
-            $_SESSION['username'] = $user['username'];
-            echo json_encode(['success' => true, 'message' => 'Login successful']);
+        if ($user) {
+            error_log("User found. Checking password.");
+            if ($user['password'] === $password) {
+                error_log("Password match. Setting session.");
+                $_SESSION['user_id'] = $user['id'];
+                $_SESSION['username'] = $user['username'];
+                echo json_encode(['success' => true, 'message' => 'Login successful']);
+            } else {
+                error_log("Password mismatch");
+                echo json_encode(['error' => 'Invalid credentials']);
+            }
         } else {
+            error_log("User not found: $username");
             echo json_encode(['error' => 'Invalid credentials']);
         }
         exit;
@@ -180,8 +192,7 @@ try {
 
     echo json_encode(['error' => 'Invalid action']);
 
-} catch (Exception $e) {
+} catch (Throwable $e) {
     http_response_code(500);
-    echo json_encode(['error' => $e->getMessage()]);
+    echo json_encode(['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
 }
-?>

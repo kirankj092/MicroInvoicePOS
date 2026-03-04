@@ -71,16 +71,17 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             
             if (!response.ok) {
-                let errorMsg = 'Server Error ' + response.status;
                 const responseText = await response.text();
+                console.error('Registration Error:', responseText);
+                let errorMsg = 'Server Error ' + response.status;
                 try {
                     const errorData = JSON.parse(responseText);
                     errorMsg = errorData.error || errorData.details || errorMsg;
                 } catch (e) {
                     if (responseText && responseText.trim().startsWith('<!DOCTYPE html>')) {
-                        errorMsg = "The server returned an unexpected HTML page. This might be due to a configuration issue or a server error.";
+                        errorMsg = "The server returned an unexpected HTML page.";
                     } else if (responseText) {
-                        errorMsg = responseText.substring(0, 200);
+                        errorMsg = "Server Error: " + responseText.substring(0, 500);
                     }
                 }
                 throw new Error(errorMsg);
@@ -126,16 +127,17 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (!response.ok) {
-                let errorMsg = 'Server Error ' + response.status;
                 const responseText = await response.text();
+                console.error('Login Error:', responseText);
+                let errorMsg = 'Server Error ' + response.status;
                 try {
                     const errorData = JSON.parse(responseText);
                     errorMsg = errorData.error || errorData.details || errorMsg;
                 } catch (e) {
                     if (responseText && responseText.trim().startsWith('<!DOCTYPE html>')) {
-                        errorMsg = "The server returned an unexpected HTML page. This might be due to a configuration issue or a server error.";
+                        errorMsg = "The server returned an unexpected HTML page.";
                     } else if (responseText) {
-                        errorMsg = responseText.substring(0, 200);
+                        errorMsg = "Server Error: " + responseText.substring(0, 500);
                     }
                 }
                 throw new Error(errorMsg);
