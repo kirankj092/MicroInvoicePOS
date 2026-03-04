@@ -190,17 +190,105 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Logout Logic
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', async () => {
-            if (!confirm('Are you sure you want to logout?')) return;
-            try {
-                await fetch('auth_api.php?action=logout');
-                window.location.replace('auth.html');
-            } catch (error) {
-                console.error("Logout failed:", error);
-                window.location.replace('auth.html');
+    // Navigation Logic
+    const navItems = document.querySelectorAll('.nav-item[data-page]');
+    const sections = {
+        dashboard: document.querySelector('.form-section'), // Currently using form-section as dashboard
+        sales: document.querySelector('.history-section'), // Currently using history-section as sales
+        purchases: null, // Placeholder
+        items: null, // Placeholder
+        customers: null, // Placeholder
+        vendors: null, // Placeholder
+        profile: null, // Placeholder
+        settings: null // Placeholder
+    };
+
+    navItems.forEach(item => {
+        item.addEventListener('click', (e) => {
+            e.preventDefault();
+            const page = item.dataset.page;
+
+            // Update active state
+            navItems.forEach(nav => nav.classList.remove('active'));
+            item.classList.add('active');
+
+            // Handle page switching
+            console.log(`Navigating to ${page}`);
+            
+            if (page === 'logout') return; // Handled by logout button logic
+            
+            // Special handling for profile
+            if (page === 'profile') {
+                if (profileBtn) profileBtn.click();
+                // Keep the previous tab active visually if profile is just a modal
+                return;
             }
+
+            // Hide all sections first
+            if (sections.dashboard) sections.dashboard.style.display = 'none';
+            if (sections.sales) sections.sales.style.display = 'none';
+            
+            // Show selected section
+            if (page === 'dashboard') {
+                if (sections.dashboard) sections.dashboard.style.display = 'block';
+                if (sections.sales) sections.sales.style.display = 'block';
+                if (emptyState) emptyState.style.display = 'none'; // Hide empty state if it was showing "Coming Soon"
+                // Re-fetch invoices to ensure list is populated if we came back from a "Coming Soon" page
+                if (allInvoices.length === 0) fetchInvoices();
+            } else if (page === 'sales') {
+                if (sections.sales) sections.sales.style.display = 'block';
+                // If we are on sales page, we need to make sure the list is populated
+                if (allInvoices.length > 0) {
+                    renderInvoices(); // Re-render to ensure table is populated
+                } else {
+                    fetchInvoices(); // Fetch if empty
+                }
+            } else {
+                // Show "Coming Soon" for other pages
+                if (emptyState) {
+                    emptyState.style.display = 'block';
+                    emptyState.innerHTML = `
+                        <div style="text-align: center; padding: 40px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+                            <h3 style="margin-top: 20px; color: #64748b;">${page.charAt(0).toUpperCase() + page.slice(1)} Module</h3>
+                            <p style="color: #94a3b8;">This feature is coming soon.</p>
+                        </div>
+                    `;
+                }
+                // Hide pagination if showing coming soon
+                const paginationContainer = document.getElementById('paginationContainer');
+                if (paginationContainer) paginationContainer.style.display = 'none';
+                // Clear the table list so it doesn't look weird under the message
+                if (invoiceList) invoiceList.innerHTML = '';
+            }
+        });
+    });
+
+    // Logout Logic
+    const handleLogout = async () => {
+        if (!confirm('Are you sure you want to logout?')) return;
+        try {
+            await fetch('auth_api.php?action=logout');
+            window.location.replace('auth.html');
+        } catch (error) {
+            console.error("Logout failed:", error);
+            window.location.replace('auth.html');
+        }
+    };
+
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            handleLogout();
+        });
+    }
+    
+    // Also attach to sidebar logout link if it exists separately
+    const sidebarLogout = document.querySelector('.logout-link');
+    if (sidebarLogout && sidebarLogout !== logoutBtn) {
+        sidebarLogout.addEventListener('click', (e) => {
+            e.preventDefault();
+            handleLogout();
         });
     }
 

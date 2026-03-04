@@ -39,34 +39,121 @@ html, body {
     }
 }
 
-.app-layout {
+.app-container {
+    min-height: 100vh;
     display: flex;
-    height: 100vh;
-    width: 100vw;
-    overflow: hidden;
+    flex-direction: row;
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
 }
 
+/* Sidebar Styles */
 .sidebar {
-    width: 260px;
-    background-color: var(--primary-dark);
-    color: white;
+    width: 250px;
+    background-color: #ffffff;
+    border-right: 1px solid var(--border);
     display: flex;
     flex-direction: column;
-    border-right: 1px solid rgba(255, 255, 255, 0.1);
-    flex-shrink: 0;
-    transition: transform 0.3s ease;
+    height: 100vh;
+    position: sticky;
+    top: 0;
     z-index: 1000;
 }
 
 .sidebar-header {
     padding: 1.5rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.logo-icon {
+    background-color: var(--primary);
+    color: white;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.logo-text {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.sidebar-nav {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1;
+    overflow-y: auto;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.nav-item:hover {
+    background-color: #f1f5f9;
+    color: var(--primary);
+}
+
+.nav-item.active {
+    background-color: var(--primary);
+    color: white;
+}
+
+.nav-divider {
+    height: 1px;
+    background-color: var(--border);
+    margin: 0.5rem 0;
+}
+
+.logout-link {
+    color: var(--error);
+    margin-top: auto;
+}
+
+.logout-link:hover {
+    background-color: var(--error-bg);
+    color: var(--error);
+}
+
+.main-content-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.main-header {
+    background-color: white;
+    color: var(--text);
+    padding: 1rem 2rem;
+    border-bottom: 1px solid var(--border);
+    box-shadow: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .logo-section {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 1rem;
 }
 
 .shop-logo-container img {
@@ -75,8 +162,38 @@ html, body {
     padding: 2px;
 }
 
-.icon-box {
+.user-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.profile-btn, .logout-btn {
     background-color: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s;
+}
+
+.profile-btn:hover, .logout-btn:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    border-color: white;
+}
+
+.logout-btn {
+    color: #fecaca;
+}
+
+.icon-box {
+    background-color: rgba(255, 255, 255, 0.2);
     padding: 0.5rem;
     border-radius: 0.5rem;
     display: flex;
@@ -85,176 +202,30 @@ html, body {
 }
 
 .title-box h1 {
-    font-size: 1.125rem;
+    font-size: 1.5rem;
     font-weight: 700;
     letter-spacing: -0.025em;
-    color: white;
 }
 
 .title-box p {
-    font-size: 0.75rem;
-    opacity: 0.7;
-    font-style: italic;
-    color: rgba(255, 255, 255, 0.8);
-}
-
-.sidebar-nav {
-    flex: 1;
-    overflow-y: auto;
-    padding: 1rem 0;
-}
-
-.sidebar-nav ul {
-    list-style: none;
-}
-
-.nav-item {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem 1.5rem;
-    color: rgba(255, 255, 255, 0.7);
-    text-decoration: none;
-    font-weight: 500;
-    font-size: 0.9rem;
-    transition: all 0.2s;
-    border-left: 3px solid transparent;
-}
-
-.nav-item:hover {
-    background-color: rgba(255, 255, 255, 0.05);
-    color: white;
-}
-
-.nav-item.active {
-    background-color: rgba(255, 255, 255, 0.1);
-    color: white;
-    border-left-color: #38bdf8; /* Sky blue accent */
-}
-
-.nav-item svg {
+    font-size: 0.875rem;
     opacity: 0.8;
-}
-
-.nav-item.active svg {
-    opacity: 1;
-}
-
-.logout-link {
-    margin-top: auto;
-    color: #fca5a5; /* Red-300 */
-}
-
-.logout-link:hover {
-    background-color: rgba(220, 38, 38, 0.1);
-    color: #fecaca;
-}
-
-.main-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    background-color: var(--bg);
-    position: relative;
-}
-
-.mobile-header {
-    display: none;
-    background-color: var(--primary);
-    color: white;
-    padding: 0.75rem 1rem;
-    align-items: center;
-    gap: 1rem;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.mobile-menu-btn {
-    background: transparent;
-    border: none;
-    color: white;
-    cursor: pointer;
-    padding: 0.25rem;
-}
-
-.mobile-title {
-    font-size: 1.125rem;
-    font-weight: 700;
+    font-style: italic;
 }
 
 .content-grid {
+    max-width: 1200px;
+    margin: 1.5rem auto;
+    padding: 0 1rem;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
     flex: 1;
-    overflow-y: auto;
-    padding: 1.5rem;
-    max-width: 1400px;
-    margin: 0 auto;
-    width: 100%;
 }
 
 @media (min-width: 1024px) {
-    .view-section#view-sales .content-grid {
-        display: grid;
-        grid-template-columns: 400px 1fr;
-        gap: 1.5rem;
-    }
-    
-    /* When inside view-section, we need to target the children directly if we want grid layout */
-    #view-sales {
-        display: grid;
-        grid-template-columns: 400px 1fr;
-        gap: 1.5rem;
-        height: 100%;
-    }
-    
-    /* Adjust card heights for full screen feel */
-    .form-section, .history-section {
-        height: 100%;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-    }
-    
-    .form-section .card, .history-section .card {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        max-height: 100%;
-    }
-    
-    .card-body, .table-container {
-        flex: 1;
-        overflow-y: auto;
-    }
-}
-
-@media (max-width: 1023px) {
-    #view-sales {
-        display: flex;
-        flex-direction: column;
-        gap: 1.5rem;
-    }
-}
-
-@media (max-width: 768px) {
-    .sidebar {
-        position: fixed;
-        top: 0;
-        left: 0;
-        height: 100%;
-        transform: translateX(-100%);
-        box-shadow: 2px 0 10px rgba(0,0,0,0.2);
-    }
-
-    .sidebar.open {
-        transform: translateX(0);
-    }
-
-    .mobile-header {
-        display: flex;
-    }
-
     .content-grid {
-        padding: 1rem;
+        grid-template-columns: 400px 1fr;
     }
 }
 
@@ -806,24 +777,50 @@ td {
     }
 }
 
+.shop-info-header {
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: var(--primary);
+}
+
 @media (max-width: 768px) {
-    .content-grid {
-        margin: 0 auto;
-        padding: 0;
-        gap: 0.15rem;
+    .app-container {
+        flex-direction: column;
+    }
+
+    .sidebar {
         width: 100%;
+        height: auto;
+        position: relative;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-nav {
+        flex-direction: row;
+        overflow-x: auto;
+        padding: 0.5rem;
+        gap: 0.5rem;
+    }
+
+    .nav-item {
+        padding: 0.5rem;
+        font-size: 0.875rem;
+        white-space: nowrap;
+    }
+    
+    .nav-divider {
+        display: none;
+    }
+
+    .logout-link {
+        margin-top: 0;
     }
 
     .main-header {
-        padding: 0.75rem;
-        flex-direction: column;
-        align-items: stretch;
-        gap: 0.75rem;
-        background: var(--primary);
-        border-bottom: 1px solid var(--primary-dark);
-        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-        color: #ffffff;
+        padding: 1rem;
     }
+}
 
     .logo-section {
         width: 100%;
