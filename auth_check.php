@@ -28,4 +28,3 @@ if (isset($_SESSION['last_regen']) && (time() - $_SESSION['last_regen'] > $timeo
     die(json_encode(["error" => "Session expired. Please login again."]));
 }
 ?>
-
