@@ -1,6 +1,6 @@
 /**
  * script.js - Vanilla JavaScript for Micro Invoice POS
- * Interacts with api.php for full CRUD operations.
+ * Interacts with /api for full CRUD operations.
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Fetch User Info & Profile
     const fetchUserInfo = async () => {
         try {
-            const response = await fetch('auth_api.php?action=check&t=' + Date.now());
+            const response = await fetch('auth_api?action=check&t=' + Date.now());
             const data = await response.json();
             if (data.authenticated) {
                 userProfile = data.profile;
@@ -178,7 +178,7 @@ document.addEventListener('DOMContentLoaded', () => {
             };
 
             try {
-                const response = await fetch('auth_api.php?action=update_profile', {
+                const response = await fetch('auth_api?action=update_profile', {
                     method: 'POST',
                     body: JSON.stringify(data),
                     headers: { 'Content-Type': 'application/json' }
@@ -202,7 +202,7 @@ document.addEventListener('DOMContentLoaded', () => {
         logoutBtn.addEventListener('click', async () => {
             if (!confirm('Are you sure you want to logout?')) return;
             try {
-                await fetch('auth_api.php?action=logout');
+                await fetch('auth_api?action=logout');
                 window.location.href = 'auth.html';
             } catch (error) {
                 console.error("Logout failed:", error);
@@ -214,7 +214,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Fetch Invoices (Read)
     const fetchInvoices = async () => {
         try {
-            const response = await fetch('api.php?action=read');
+            const response = await fetch('api?action=read');
             if (response.status === 401) {
                 window.location.href = 'auth.html';
                 return;
@@ -527,7 +527,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!confirm('Are you sure you want to delete this invoice?')) return;
 
         try {
-            const response = await fetch('api.php?action=delete', {
+            const response = await fetch('api?action=delete', {
                 method: 'POST',
                 body: JSON.stringify({ id }),
                 headers: { 'Content-Type': 'application/json' }
@@ -752,7 +752,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (editingId) data.id = editingId;
 
             try {
-                const response = await fetch(`api.php?action=${action}`, {
+                const response = await fetch(`api?action=${action}`, {
                     method: 'POST',
                     body: JSON.stringify(data),
                     headers: { 'Content-Type': 'application/json' }
@@ -814,7 +814,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const fetchCustomers = async () => {
         try {
             console.log("Fetching customers...");
-            const response = await fetch('api.php?action=customers_read&t=' + Date.now());
+            const response = await fetch('api?action=customers_read&t=' + Date.now());
             console.log("Fetch customers response status:", response.status);
             if (response.ok) {
                 allCustomers = await response.json();
@@ -886,7 +886,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const handleDeleteCustomer = async (id) => {
         if (!confirm('Are you sure you want to delete this customer?')) return;
         try {
-            const response = await fetch('api.php?action=customers_delete', {
+            const response = await fetch('api?action=customers_delete', {
                 method: 'POST',
                 body: JSON.stringify({ id }),
                 headers: { 'Content-Type': 'application/json' }
@@ -988,7 +988,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (id) data.id = id;
 
             try {
-                const response = await fetch(`api.php?action=${action}`, {
+                const response = await fetch(`api?action=${action}`, {
                     method: 'POST',
                     body: JSON.stringify(data),
                     headers: { 'Content-Type': 'application/json' }

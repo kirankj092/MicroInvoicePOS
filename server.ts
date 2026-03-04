@@ -93,6 +93,12 @@ const PORT = 3000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Request logging middleware
+app.use((req, res, next) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+    next();
+});
+
 // Mock session for preview - Persist to file to survive restarts
 const SESSION_FILE = './mock_session.json';
 let mockSession: any = {};
@@ -137,7 +143,7 @@ const saveSession = () => {
 ensureDefaultUser();
 
 // Mock auth_api.php
-app.all("/auth_api.php", async (req, res) => {
+app.all(["/auth_api.php", "/auth_api"], async (req, res) => {
     const action = req.query.action;
     const method = req.method;
 
@@ -251,7 +257,7 @@ app.all("/auth_api.php", async (req, res) => {
 });
 
 // Mock api.php for the preview environment
-app.all("/api.php", (req, res) => {
+app.all(["/api.php", "/api"], (req, res) => {
     const action = req.query.action;
     const method = req.method;
 
@@ -362,7 +368,7 @@ app.all("/api.php", (req, res) => {
 });
 
 // Debug route to check database state
-app.get("/test_db.php", (req, res) => {
+app.get(["/test_db.php", "/test_db"], (req, res) => {
     try {
         const users = db.prepare("SELECT id, username, email FROM users").all();
         const customers = db.prepare("SELECT * FROM customers").all();
@@ -430,6 +436,15 @@ app.get("/test_db.php", (req, res) => {
 });
 
 app.use(express.static(path.join(process.cwd(), ".")));
+
+// 404 Handler
+app.use((req, res) => {
+    console.log(`[404] ${req.method} ${req.url}`);
+    if (req.url.startsWith('/api') || req.url.startsWith('/auth_api')) {
+        return res.status(404).json({ error: "API Route not found", url: req.url });
+    }
+    res.status(404).send(`<h1>404 - Page Not Found</h1><p>The requested URL ${req.url} was not found on this server.</p>`);
+});
 
 app.listen(PORT, "0.0.0.0", () => {
     console.log(`Preview server running on http://localhost:${PORT}`);
