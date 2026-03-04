@@ -99,8 +99,8 @@ const saveSession = () => {
     fs.writeFileSync(SESSION_FILE, JSON.stringify(mockSession));
 };
 
-// Mock auth_api.php
-app.all("/auth_api.php", async (req, res) => {
+// Mock auth API
+app.all("/api/auth", async (req, res) => {
     const action = req.query.action || req.body.action;
     const method = req.method;
 
@@ -222,8 +222,8 @@ app.all("/auth_api.php", async (req, res) => {
     }
 });
 
-// Mock api.php for the preview environment
-app.all("/api.php", (req, res) => {
+// Mock data API
+app.all("/api/data", (req, res) => {
     const action = req.query.action || req.body.action;
     const method = req.method;
 
