@@ -225,6 +225,9 @@ app.all("/api.php", (req, res) => {
 
     try {
         console.log(`API call: action=${action}, method=${method}, user_id=${mockSession.user_id}`);
+        console.log("Request Query:", JSON.stringify(req.query));
+        console.log("Request Body:", JSON.stringify(req.body));
+
         if (action === 'read') {
             const invoices = db.prepare("SELECT * FROM invoices WHERE user_id = ? ORDER BY created_at DESC").all(mockSession.user_id);
             return res.json(invoices);
@@ -241,6 +244,13 @@ app.all("/api.php", (req, res) => {
 
             if (action === 'customers_create') {
                 const { name, phone, email, address, dob } = data;
+                console.log(`Creating customer for user ${mockSession.user_id}: ${name}`);
+                
+                if (!name || name.trim() === '') {
+                    console.error("Customer creation failed: Name is missing");
+                    return res.status(400).json({ error: "Customer name is required" });
+                }
+
                 const stmt = db.prepare("INSERT INTO customers (user_id, name, phone, email, address, dob) VALUES (?, ?, ?, ?, ?, ?)");
                 const result = stmt.run(mockSession.user_id, name, phone, email, address, dob);
                 console.log("Customer create result:", JSON.stringify(result));
@@ -249,8 +259,18 @@ app.all("/api.php", (req, res) => {
 
             if (action === 'customers_update') {
                 const { id, name, phone, email, address, dob } = data;
+                console.log(`Updating customer ${id} for user ${mockSession.user_id}: ${name}`);
+
+                if (!id) {
+                    return res.status(400).json({ error: "Customer ID is required" });
+                }
+                if (!name || name.trim() === '') {
+                    return res.status(400).json({ error: "Customer name is required" });
+                }
+
                 const stmt = db.prepare("UPDATE customers SET name=?, phone=?, email=?, address=?, dob=? WHERE id=? AND user_id=?");
-                stmt.run(name, phone, email, address, dob, id, mockSession.user_id);
+                const result = stmt.run(name, phone, email, address, dob, id, mockSession.user_id);
+                console.log("Customer update result:", JSON.stringify(result));
                 return res.json({ success: true });
             }
 
@@ -292,6 +312,67 @@ app.all("/api.php", (req, res) => {
 });
 
 app.use(express.static(path.join(process.cwd(), ".")));
+
+// Debug route to check database state
+app.get("/test_db.php", (req, res) => {
+    try {
+        const users = db.prepare("SELECT id, username, email FROM users").all();
+        const customers = db.prepare("SELECT * FROM customers").all();
+        const invoices = db.prepare("SELECT * FROM invoices").all();
+        const profiles = db.prepare("SELECT * FROM profiles").all();
+        
+        let html = `
+            <html>
+            <head>
+                <title>Database Debugger</title>
+                <style>
+                    body { font-family: sans-serif; padding: 20px; line-height: 1.5; }
+                    table { border-collapse: collapse; width: 100%; margin-bottom: 30px; }
+                    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                    th { background-color: #f2f2f2; }
+                    h2 { color: #333; border-bottom: 2px solid #333; padding-bottom: 10px; }
+                    .session-info { background: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 20px; }
+                </style>
+            </head>
+            <body>
+                <h1>Database Debugger</h1>
+                
+                <div class="session-info">
+                    <h2>Current Mock Session</h2>
+                    <pre>${JSON.stringify(mockSession, null, 2)}</pre>
+                </div>
+
+                <h2>Users (${users.length})</h2>
+                <table>
+                    <tr><th>ID</th><th>Username</th><th>Email</th></tr>
+                    ${users.map((u: any) => `<tr><td>${u.id}</td><td>${u.username}</td><td>${u.email}</td></tr>`).join('')}
+                </table>
+
+                <h2>Customers (${customers.length})</h2>
+                <table>
+                    <tr><th>ID</th><th>User ID</th><th>Name</th><th>Phone</th><th>Email</th><th>Address</th><th>DOB</th><th>Created At</th></tr>
+                    ${customers.map((c: any) => `<tr><td>${c.id}</td><td>${c.user_id}</td><td>${c.name}</td><td>${c.phone}</td><td>${c.email}</td><td>${c.address}</td><td>${c.dob}</td><td>${c.created_at}</td></tr>`).join('')}
+                </table>
+
+                <h2>Invoices (${invoices.length})</h2>
+                <table>
+                    <tr><th>ID</th><th>User ID</th><th>Customer</th><th>Total</th><th>Date</th></tr>
+                    ${invoices.map((i: any) => `<tr><td>${i.id}</td><td>${i.user_id}</td><td>${i.customer_name}</td><td>${i.total}</td><td>${i.created_at}</td></tr>`).join('')}
+                </table>
+
+                <h2>Profiles (${profiles.length})</h2>
+                <table>
+                    <tr><th>User ID</th><th>Shop Name</th><th>Email</th></tr>
+                    ${profiles.map((p: any) => `<tr><td>${p.user_id}</td><td>${p.shop_name}</td><td>${p.email}</td></tr>`).join('')}
+                </table>
+            </body>
+            </html>
+        `;
+        res.send(html);
+    } catch (err: any) {
+        res.status(500).send(`<h1>Error Debugging Database</h1><pre>${err.message}</pre>`);
+    }
+});
 
 app.listen(PORT, "0.0.0.0", () => {
     console.log(`Preview server running on http://localhost:${PORT}`);
