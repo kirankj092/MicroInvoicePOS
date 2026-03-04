@@ -4,9 +4,21 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "php -S 0.0.0.0:3000",
-    "build": "echo 'No build needed for this PHP app'"
+    "dev": "tsx server.ts",
+    "build": "echo 'No build needed for this static app'",
+    "lint": "tsc --noEmit"
   },
-  "dependencies": {},
-  "devDependencies": {}
+  "dependencies": {
+    "better-sqlite3": "^11.8.1",
+    "dotenv": "^17.3.1",
+    "express": "^4.21.2",
+    "nodemailer": "^8.0.1"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/express": "^5.0.0",
+    "@types/nodemailer": "^7.0.11",
+    "tsx": "^4.19.3",
+    "typescript": "^5.9.3"
+  }
 }

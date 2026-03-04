@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "allowJs": true,
+    "checkJs": false,
+    "outDir": "./dist"
+  },
+  "include": ["server.ts", "src/**/*"],
+  "exclude": ["node_modules"]
+}
