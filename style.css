@@ -70,34 +70,87 @@ html, body {
     padding: 2px;
 }
 
-.user-actions {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
+.user-menu-wrapper {
+    position: relative;
 }
 
-.customers-btn, .profile-btn, .logout-btn {
-    background-color: rgba(255, 255, 255, 0.1);
+.menu-toggle-btn {
+    background: rgba(255, 255, 255, 0.1);
     color: white;
     border: 1px solid rgba(255, 255, 255, 0.2);
-    padding: 0.5rem 0.75rem;
+    padding: 0.5rem;
     border-radius: 0.5rem;
-    font-size: 0.875rem;
-    font-weight: 600;
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    justify-content: center;
     transition: all 0.2s;
 }
 
-.customers-btn:hover, .profile-btn:hover, .logout-btn:hover {
-    background-color: rgba(255, 255, 255, 0.2);
+.menu-toggle-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
     border-color: white;
 }
 
-.logout-btn {
-    color: #fecaca;
+.user-dropdown {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    right: 0;
+    background: white;
+    min-width: 200px;
+    border-radius: 0.75rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--border);
+    display: none;
+    flex-direction: column;
+    padding: 0.5rem;
+    z-index: 1000;
+    animation: dropdownFadeIn 0.2s ease-out;
+}
+
+.user-dropdown.show {
+    display: flex;
+}
+
+@keyframes dropdownFadeIn {
+    from { transform: translateY(-10px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.dropdown-item {
+    background: transparent;
+    border: none;
+    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--text);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: 0.5rem;
+    text-align: left;
+    transition: all 0.2s;
+}
+
+.dropdown-item:hover {
+    background: var(--input-bg);
+    color: var(--primary);
+}
+
+.dropdown-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 0.5rem 0;
+}
+
+.logout-item {
+    color: var(--error);
+}
+
+.logout-item:hover {
+    background: var(--error-bg);
+    color: var(--error);
 }
 
 .icon-box {
@@ -770,21 +823,22 @@ td {
         height: 18px;
     }
 
-    .user-actions {
-        width: 100%;
-        justify-content: center;
-        gap: 0.25rem;
-        padding-top: 0.25rem;
-        border-top: 1px dashed rgba(255, 255, 255, 0.2);
+    .user-menu-wrapper {
+        width: auto;
     }
 
-    .customers-btn, .profile-btn, .logout-btn {
-        flex: 1;
-        justify-content: center;
-        padding: 0.5rem 0.75rem;
-        font-size: 0.75rem;
-        border-radius: 0.5rem;
-        font-weight: 600;
+    .menu-toggle-btn {
+        padding: 0.6rem;
+    }
+
+    .user-dropdown {
+        position: fixed;
+        top: auto;
+        bottom: 1rem;
+        left: 1rem;
+        right: 1rem;
+        width: calc(100% - 2rem);
+        box-shadow: 0 -10px 15px -3px rgba(0, 0, 0, 0.1);
     }
 
     .title-box h1 {

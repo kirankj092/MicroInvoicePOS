@@ -218,6 +218,7 @@ app.all("/api.php", (req, res) => {
     }
 
     try {
+        console.log(`API call: action=${action}, method=${method}, user_id=${mockSession.user_id}`);
         if (action === 'read') {
             const invoices = db.prepare("SELECT * FROM invoices WHERE user_id = ? ORDER BY created_at DESC").all(mockSession.user_id);
             return res.json(invoices);

@@ -885,6 +885,28 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // Menu Toggle Logic
+    const menuToggleBtn = document.getElementById('menuToggleBtn');
+    const userDropdown = document.getElementById('userDropdown');
+
+    if (menuToggleBtn && userDropdown) {
+        menuToggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            userDropdown.classList.toggle('show');
+        });
+
+        document.addEventListener('click', () => {
+            userDropdown.classList.remove('show');
+        });
+
+        userDropdown.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (e.target.closest('.dropdown-item')) {
+                userDropdown.classList.remove('show');
+            }
+        });
+    }
+
     // Customer Modal Listeners
     const customersBtn = document.getElementById('customersBtn');
     const customersModal = document.getElementById('customersModal');
@@ -928,6 +950,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (customerForm) {
         customerForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            console.log("Customer form submit handler triggered");
             const id = document.getElementById('customerId').value;
             const data = {
                 name: document.getElementById('custName').value,
@@ -936,6 +959,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 address: document.getElementById('custAddress').value,
                 dob: document.getElementById('custDob').value
             };
+            console.log("Saving customer data:", data, "ID:", id);
 
             const action = id ? 'customers_update' : 'customers_create';
             if (id) data.id = id;
@@ -946,16 +970,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     body: JSON.stringify(data),
                     headers: { 'Content-Type': 'application/json' }
                 });
+                console.log("Customer save response status:", response.status);
                 const result = await response.json();
+                console.log("Customer save result:", result);
                 if (result.success) {
                     showStatus(id ? 'Customer updated!' : 'Customer saved!', 'success');
                     customerFormModal.style.display = 'none';
                     fetchCustomers();
                 } else {
-                    showStatus('Error: ' + result.error, 'error');
+                    showStatus('Error: ' + (result.error || 'Unknown error'), 'error');
                 }
             } catch (error) {
-                showStatus('Error saving customer', 'error');
+                console.error("Error saving customer:", error);
+                showStatus('Error saving customer: ' + error.message, 'error');
             }
         });
     }
