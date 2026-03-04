@@ -75,82 +75,151 @@ html, body {
 }
 
 .menu-toggle-btn {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.15);
     color: white;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    padding: 0.5rem;
-    border-radius: 0.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 0.6rem;
+    border-radius: 0.75rem;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .menu-toggle-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.25);
     border-color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+}
+
+.menu-toggle-btn:active {
+    transform: translateY(0);
 }
 
 .user-dropdown {
     position: absolute;
-    top: calc(100% + 0.5rem);
+    top: calc(100% + 0.75rem);
     right: 0;
     background: white;
-    min-width: 200px;
-    border-radius: 0.75rem;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    min-width: 240px;
+    border-radius: 1.25rem;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
     border: 1px solid var(--border);
     display: none;
     flex-direction: column;
-    padding: 0.5rem;
+    padding: 0.75rem;
     z-index: 1000;
-    animation: dropdownFadeIn 0.2s ease-out;
+    transform-origin: top right;
+    animation: dropdownScaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dropdown-user-info {
+    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.25rem;
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    background: var(--primary);
+    color: white;
+    border-radius: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.user-details {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.user-details .shop-name {
+    font-weight: 700;
+    font-size: 0.9375rem;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.user-details .user-email {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .user-dropdown.show {
     display: flex;
 }
 
-@keyframes dropdownFadeIn {
-    from { transform: translateY(-10px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
+@keyframes dropdownScaleIn {
+    from { transform: scale(0.95); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
 }
 
 .dropdown-item {
     background: transparent;
     border: none;
-    padding: 0.75rem 1rem;
+    padding: 0.875rem 1rem;
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.875rem;
     color: var(--text);
-    font-size: 0.875rem;
+    font-size: 0.9375rem;
     font-weight: 500;
     cursor: pointer;
-    border-radius: 0.5rem;
+    border-radius: 0.75rem;
     text-align: left;
-    transition: all 0.2s;
+    transition: all 0.15s ease;
 }
 
 .dropdown-item:hover {
-    background: var(--input-bg);
+    background: #f1f5f9;
+    color: var(--primary);
+    padding-left: 1.25rem;
+}
+
+.dropdown-item svg {
+    color: var(--text-muted);
+    transition: color 0.15s ease;
+}
+
+.dropdown-item:hover svg {
     color: var(--primary);
 }
 
 .dropdown-divider {
     height: 1px;
-    background: var(--border);
-    margin: 0.5rem 0;
+    background: #f1f5f9;
+    margin: 0.5rem 0.75rem;
 }
 
 .logout-item {
-    color: var(--error);
+    color: #ef4444;
 }
 
 .logout-item:hover {
-    background: var(--error-bg);
-    color: var(--error);
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+.logout-item svg {
+    color: #f87171;
+}
+
+.logout-item:hover svg {
+    color: #dc2626;
 }
 
 .icon-box {
@@ -486,27 +555,43 @@ html, body {
     color: var(--primary);
 }
 
+/* Global Status Message (Toast) */
 .status-message {
-    margin-top: 1rem;
-    padding: 0.75rem;
-    border-radius: 0.5rem;
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 1rem 1.5rem;
+    border-radius: 0.75rem;
     font-size: 0.875rem;
-    text-align: center;
+    font-weight: 600;
+    z-index: 9999;
     display: none;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    animation: toastSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    max-width: 300px;
+}
+
+@keyframes toastSlideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
 }
 
 .status-message.success {
-    display: block;
-    background-color: var(--success-bg);
-    color: var(--success);
-    border: 1px solid #bbf7d0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background-color: #ecfdf5;
+    color: #065f46;
+    border: 1px solid #10b981;
 }
 
 .status-message.error {
-    display: block;
-    background-color: var(--error-bg);
-    color: var(--error);
-    border: 1px solid #fecaca;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background-color: #fef2f2;
+    color: #991b1b;
+    border: 1px solid #ef4444;
 }
 
 .table-container {

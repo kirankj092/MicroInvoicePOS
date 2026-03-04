@@ -127,8 +127,14 @@ app.all("/auth_api.php", async (req, res) => {
 
         if (action === 'check') {
             if (mockSession.user_id) {
+                const user = db.prepare("SELECT email FROM users WHERE id = ?").get(mockSession.user_id) as any;
                 const profile = db.prepare("SELECT * FROM profiles WHERE user_id = ?").get(mockSession.user_id);
-                return res.json({ authenticated: true, username: mockSession.username, profile: profile || {} });
+                return res.json({ 
+                    authenticated: true, 
+                    username: mockSession.username, 
+                    email: user?.email,
+                    profile: profile || {} 
+                });
             }
             return res.json({ authenticated: false });
         }
@@ -231,11 +237,13 @@ app.all("/api.php", (req, res) => {
 
         if (method === 'POST') {
             const data = req.body;
+            console.log("API POST data:", JSON.stringify(data));
 
             if (action === 'customers_create') {
                 const { name, phone, email, address, dob } = data;
                 const stmt = db.prepare("INSERT INTO customers (user_id, name, phone, email, address, dob) VALUES (?, ?, ?, ?, ?, ?)");
                 const result = stmt.run(mockSession.user_id, name, phone, email, address, dob);
+                console.log("Customer create result:", JSON.stringify(result));
                 return res.json({ success: true, id: result.lastInsertRowid });
             }
 

@@ -62,6 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
             if (data.authenticated) {
                 userProfile = data.profile;
+                if (data.email && !userProfile.email) userProfile.email = data.email;
                 updateUIWithProfile(userProfile);
             }
         } catch (error) {
@@ -79,6 +80,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (shopNameDisplay) shopNameDisplay.textContent = name;
         if (footerShopName) footerShopName.textContent = name;
         
+        // Update dropdown info
+        const dropdownShopName = document.getElementById('dropdownShopName');
+        const dropdownUserEmail = document.getElementById('dropdownUserEmail');
+        if (dropdownShopName) dropdownShopName.textContent = name;
+        if (dropdownUserEmail && profile.email) dropdownUserEmail.textContent = profile.email;
+
         if (profile.shop_logo) {
             if (headerLogoImg) headerLogoImg.src = profile.shop_logo;
             if (shopLogoHeader) shopLogoHeader.style.display = 'block';
@@ -662,13 +669,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Show Status Message
     const showStatus = (message, type) => {
-        statusMessage.textContent = message;
+        const icon = type === 'success' 
+            ? '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>'
+            : '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>';
+        
+        statusMessage.innerHTML = `${icon} <span>${message}</span>`;
         statusMessage.className = `status-message ${type}`;
-        statusMessage.style.display = 'block';
+        statusMessage.style.display = 'flex';
         
         setTimeout(() => {
             statusMessage.style.display = 'none';
-        }, 3000);
+        }, 4000);
     };
 
     // Event Listeners
