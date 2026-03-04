@@ -151,6 +151,7 @@ try {
     echo json_encode(['error' => 'Invalid action or method']);
 
 } catch (Throwable $e) {
+    if (ob_get_length()) ob_end_clean();
     http_response_code(500);
     echo json_encode(['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
 }

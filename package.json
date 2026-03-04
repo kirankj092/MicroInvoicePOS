@@ -5,8 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "php -S 0.0.0.0:3000",
-    "build": "echo 'No build needed for this PHP app'",
-    "lint": "php -l *.php"
+    "build": "echo 'No build needed for this PHP app'"
   },
   "dependencies": {},
   "devDependencies": {}

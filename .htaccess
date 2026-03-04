@@ -4,6 +4,16 @@
     Deny from all
 </Files>
 
+# Enable URL rewriting
+RewriteEngine On
+
+# If the requested filename is not a file
+RewriteCond %{REQUEST_FILENAME} !-f
+# And the requested filename with .php exists
+RewriteCond %{REQUEST_FILENAME}.php -f
+# Then rewrite to the .php file
+RewriteRule ^(.*)$ $1.php [L,QSA]
+
 # Optional: Enable compression
 <IfModule mod_deflate.c>
     AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/json

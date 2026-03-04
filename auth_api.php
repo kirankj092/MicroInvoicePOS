@@ -20,8 +20,9 @@ try {
             exit;
         }
 
+        $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
         $stmt = $pdo->prepare("INSERT INTO users (username, email, password) VALUES (?, ?, ?)");
-        $stmt->execute([$username, $email, $password]);
+        $stmt->execute([$username, $email, $hashedPassword]);
         echo json_encode(['success' => true, 'message' => 'Registration successful']);
         exit;
     }
@@ -45,7 +46,7 @@ try {
 
         if ($user) {
             error_log("User found. Checking password.");
-            if ($user['password'] === $password) {
+            if (password_verify($password, $user['password'])) {
                 error_log("Password match. Setting session.");
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['username'] = $user['username'];
@@ -177,8 +178,9 @@ try {
         $reset = $stmt->fetch();
         
         if ($reset) {
+            $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
             $stmt = $pdo->prepare("UPDATE users SET password = ? WHERE email = ?");
-            $stmt->execute([$newPassword, $email]);
+            $stmt->execute([$hashedPassword, $email]);
             
             $stmt = $pdo->prepare("DELETE FROM password_resets WHERE email = ?");
             $stmt->execute([$email]);
@@ -193,6 +195,7 @@ try {
     echo json_encode(['error' => 'Invalid action']);
 
 } catch (Throwable $e) {
+    if (ob_get_length()) ob_end_clean();
     http_response_code(500);
     echo json_encode(['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
 }
