@@ -797,6 +797,60 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Navigation Logic
+    const navItems = document.querySelectorAll('.nav-item[data-view]');
+    const views = document.querySelectorAll('.view-section');
+    const sidebar = document.getElementById('mainSidebar');
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+
+    navItems.forEach(item => {
+        item.addEventListener('click', (e) => {
+            e.preventDefault();
+            
+            // Update active state
+            document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+            item.classList.add('active');
+
+            const viewId = item.getAttribute('data-view');
+            
+            // Hide all views
+            views.forEach(view => {
+                view.style.display = 'none';
+            });
+            
+            // Show selected view
+            const selectedView = document.getElementById(`view-${viewId}`);
+            if (selectedView) {
+                if (viewId === 'sales') {
+                    selectedView.style.display = ''; // Let CSS grid/flex take over
+                } else {
+                    selectedView.style.display = 'block';
+                }
+            }
+
+            // Close sidebar on mobile
+            if (window.innerWidth <= 768 && sidebar) {
+                sidebar.classList.remove('open');
+            }
+        });
+    });
+
+    // Mobile Menu Toggle
+    if (mobileMenuBtn && sidebar) {
+        mobileMenuBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+        });
+    }
+
+    // Close sidebar when clicking outside
+    document.addEventListener('click', (e) => {
+        if (window.innerWidth <= 768 && sidebar && sidebar.classList.contains('open')) {
+            if (!sidebar.contains(e.target) && !mobileMenuBtn.contains(e.target)) {
+                sidebar.classList.remove('open');
+            }
+        }
+    });
+
     // Initial Load
     fetchUserInfo();
     fetchInvoices();
