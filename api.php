@@ -1,218 +1,157 @@
 <?php
 ob_start();
-error_reporting(0);
-ini_set('display_errors', 0);
-mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
+// api.php
+require_once 'db_config.php';
+
 header('Content-Type: application/json');
 
-// Handle pre-flight OPTIONS request (prevents Network Errors in browsers)
-if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
-    http_response_code(200);
+if (!isset($_SESSION['user_id'])) {
+    http_response_code(401);
+    echo json_encode(['error' => 'Unauthorized']);
     exit;
 }
 
-// 2. Load Authentication Middleware
-// This protects all API actions below
-require_once('auth_check.php');
+$action = $_REQUEST['action'] ?? '';
+$method = $_SERVER['REQUEST_METHOD'];
+$user_id = $_SESSION['user_id'];
 
-// 3. Load Database Credentials from the local Hostinger file
-// This file is NOT on GitHub, keeping your password safe!
-if (!file_exists('db_config.php')) {
-    die(json_encode(["error" => "Configuration file (db_config.php) missing on server."]));
-}
-require_once('db_config.php');
-
-// 3. Establish Connection
-// Support multiple variable naming conventions (Hostinger vs Standard)
-$db_host = $host ?? $servername ?? 'localhost';
-$db_user = $username ?? $db_user ?? $user ?? '';
-$db_pass = $password ?? $db_pass ?? $pass ?? '';
-$db_name = $dbname ?? $db_name ?? '';
-
-// Suppress warnings to keep JSON valid
-$conn = @new mysqli($db_host, $db_user, $db_pass, $db_name);
-
-// Check connection
-if ($conn->connect_error) {
-    ob_clean();
-    die(json_encode([
-        "error" => "Database connection failed",
-        "details" => $conn->connect_error,
-        "hint" => "Check your db_config.php variable names. Ensure you use \$host, \$username, \$password, and \$dbname."
-    ]));
-}
-
-// Helper function to read JSON body from JavaScript fetch
-function getJsonInput() {
-    return json_decode(file_get_contents('php://input'), true);
-}
-
-// 4. Handle Actions
 try {
-    $action = $_GET['action'] ?? '';
+    if ($action === 'read') {
+        $stmt = $pdo->prepare("SELECT * FROM invoices WHERE user_id = ? ORDER BY created_at DESC");
+        $stmt->execute([$user_id]);
+        $invoices = $stmt->fetchAll();
 
-    switch ($action) {
-    case 'read':
-        $user_id = $_SESSION['user_id'];
-        $stmt = $conn->prepare("SELECT * FROM invoices WHERE user_id = ? ORDER BY created_at DESC");
-        if (!$stmt) {
-            echo json_encode(["error" => "SQL Error: " . $conn->error]);
-            break;
-        }
-        $stmt->bind_param("i", $user_id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $invoices = [];
-        if ($result) {
-            while ($row = $result->fetch_assoc()) {
-                // Fetch items for this invoice
-                $invoice_id = $row['id'];
-                $item_stmt = $conn->prepare("SELECT * FROM invoice_items WHERE invoice_id = ?");
-                $item_stmt->bind_param("i", $invoice_id);
-                $item_stmt->execute();
-                $item_result = $item_stmt->get_result();
-                $items = [];
-                while ($item_row = $item_result->fetch_assoc()) {
-                    $items[] = $item_row;
-                }
-                $row['items'] = $items;
-                $invoices[] = $row;
-                $item_stmt->close();
-            }
+        foreach ($invoices as &$invoice) {
+            $stmt_items = $pdo->prepare("SELECT * FROM invoice_items WHERE invoice_id = ?");
+            $stmt_items->execute([$invoice['id']]);
+            $invoice['items'] = $stmt_items->fetchAll();
         }
         echo json_encode($invoices);
-        $stmt->close();
-        break;
+        exit;
+    }
 
-    case 'create':
-        $data = getJsonInput();
-        if (!$data) { echo json_encode(["error" => "No data provided"]); break; }
-        
-        $user_id = $_SESSION['user_id'];
-        $customer = $data['customer_name'] ?? '';
-        $items = $data['items'] ?? [];
-        $total = $data['total'] ?? 0;
+    if ($action === 'customers_read') {
+        $stmt = $pdo->prepare("SELECT * FROM customers WHERE user_id = ? ORDER BY name ASC");
+        $stmt->execute([$user_id]);
+        echo json_encode($stmt->fetchAll());
+        exit;
+    }
 
-        // Start transaction
-        $conn->begin_transaction();
+    if ($method === 'POST') {
+        $data = json_decode(file_get_contents('php://input'), true);
 
-        try {
-            $stmt = $conn->prepare("INSERT INTO invoices (user_id, customer_name, total) VALUES (?, ?, ?)");
-            $stmt->bind_param("isd", $user_id, $customer, $total);
-            $stmt->execute();
-            $invoice_id = $stmt->insert_id;
-            $stmt->close();
+        if ($action === 'customers_create') {
+            $stmt = $pdo->prepare("INSERT INTO customers (user_id, name, phone, email, address, dob) VALUES (?, ?, ?, ?, ?, ?)");
+            $stmt->execute([
+                $user_id, 
+                $data['name'], 
+                $data['phone'], 
+                $data['email'] ?? '', 
+                $data['address'] ?? '', 
+                $data['dob'] ?? ''
+            ]);
+            echo json_encode(['success' => true, 'id' => $pdo->lastInsertId()]);
+            exit;
+        }
 
-            $item_stmt = $conn->prepare("INSERT INTO invoice_items (invoice_id, item_name, price, quantity, discount, gst_rate, subtotal) VALUES (?, ?, ?, ?, ?, ?, ?)");
-            foreach ($items as $item) {
-                $item_name = $item['item_name'];
-                $price = $item['price'];
-                $quantity = $item['quantity'];
-                $discount = $item['discount'] ?? 0;
-                $gst_rate = $item['gst_rate'] ?? 0;
-                $subtotal = $item['subtotal'];
-                $item_stmt->bind_param("isdidid", $invoice_id, $item_name, $price, $quantity, $discount, $gst_rate, $subtotal);
-                $item_stmt->execute();
+        if ($action === 'customers_update') {
+            $stmt = $pdo->prepare("UPDATE customers SET name=?, phone=?, email=?, address=?, dob=? WHERE id=? AND user_id=?");
+            $stmt->execute([
+                $data['name'], 
+                $data['phone'], 
+                $data['email'] ?? '', 
+                $data['address'] ?? '', 
+                $data['dob'] ?? '', 
+                $data['id'], 
+                $user_id
+            ]);
+            echo json_encode(['success' => true]);
+            exit;
+        }
+
+        if ($action === 'customers_delete') {
+            $stmt = $pdo->prepare("DELETE FROM customers WHERE id=? AND user_id=?");
+            $stmt->execute([$data['id'], $user_id]);
+            echo json_encode(['success' => true]);
+            exit;
+        }
+
+        if ($action === 'create') {
+            $pdo->beginTransaction();
+            try {
+                $stmt = $pdo->prepare("INSERT INTO invoices (user_id, customer_name, total) VALUES (?, ?, ?)");
+                $stmt->execute([$user_id, $data['customer_name'], $data['total']]);
+                $invoice_id = $pdo->lastInsertId();
+
+                $stmt_item = $pdo->prepare("INSERT INTO invoice_items (invoice_id, item_name, price, quantity, discount, gst_rate, subtotal) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                foreach ($data['items'] as $item) {
+                    $stmt_item->execute([
+                        $invoice_id, 
+                        $item['item_name'], 
+                        $item['price'], 
+                        $item['quantity'], 
+                        $item['discount'] ?? 0, 
+                        $item['gst_rate'] ?? 0, 
+                        $item['subtotal']
+                    ]);
+                }
+                $pdo->commit();
+                echo json_encode(['success' => true, 'id' => $invoice_id]);
+            } catch (Exception $e) {
+                $pdo->rollBack();
+                throw $e;
             }
-            $item_stmt->close();
-
-            $conn->commit();
-            echo json_encode(["success" => true, "id" => $invoice_id]);
-        } catch (Exception $e) {
-            $conn->rollback();
-            echo json_encode(["error" => "Transaction failed: " . $e->getMessage()]);
+            exit;
         }
-        break;
 
-    case 'update':
-        $data = getJsonInput();
-        if (!$data) { echo json_encode(["error" => "No data provided"]); break; }
+        if ($action === 'update') {
+            $pdo->beginTransaction();
+            try {
+                $stmt = $pdo->prepare("UPDATE invoices SET customer_name=?, total=? WHERE id=? AND user_id=?");
+                $stmt->execute([$data['customer_name'], $data['total'], $data['id'], $user_id]);
+                $invoice_id = $data['id'];
 
-        $user_id = $_SESSION['user_id'];
-        $id = $data['id'] ?? 0;
-        $customer = $data['customer_name'] ?? '';
-        $items = $data['items'] ?? [];
-        $total = $data['total'] ?? 0;
+                $stmt_del = $pdo->prepare("DELETE FROM invoice_items WHERE invoice_id=?");
+                $stmt_del->execute([$invoice_id]);
 
-        $conn->begin_transaction();
-
-        try {
-            // Verify ownership before updating
-            $check_stmt = $conn->prepare("SELECT id FROM invoices WHERE id=? AND user_id=?");
-            $check_stmt->bind_param("ii", $id, $user_id);
-            $check_stmt->execute();
-            if ($check_stmt->get_result()->num_rows === 0) {
-                throw new Exception("Unauthorized or invoice not found.");
+                $stmt_item = $pdo->prepare("INSERT INTO invoice_items (invoice_id, item_name, price, quantity, discount, gst_rate, subtotal) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                foreach ($data['items'] as $item) {
+                    $stmt_item->execute([
+                        $invoice_id, 
+                        $item['item_name'], 
+                        $item['price'], 
+                        $item['quantity'], 
+                        $item['discount'] ?? 0, 
+                        $item['gst_rate'] ?? 0, 
+                        $item['subtotal']
+                    ]);
+                }
+                $pdo->commit();
+                echo json_encode(['success' => true]);
+            } catch (Exception $e) {
+                $pdo->rollBack();
+                throw $e;
             }
-            $check_stmt->close();
-
-            $stmt = $conn->prepare("UPDATE invoices SET customer_name=?, total=? WHERE id=? AND user_id=?");
-            $stmt->bind_param("sdii", $customer, $total, $id, $user_id);
-            $stmt->execute();
-            $stmt->close();
-
-            // Delete old items
-            $del_stmt = $conn->prepare("DELETE FROM invoice_items WHERE invoice_id = ?");
-            $del_stmt->bind_param("i", $id);
-            $del_stmt->execute();
-            $del_stmt->close();
-
-            // Insert new items
-            $item_stmt = $conn->prepare("INSERT INTO invoice_items (invoice_id, item_name, price, quantity, discount, gst_rate, subtotal) VALUES (?, ?, ?, ?, ?, ?, ?)");
-            foreach ($items as $item) {
-                $item_name = $item['item_name'];
-                $price = $item['price'];
-                $quantity = $item['quantity'];
-                $discount = $item['discount'] ?? 0;
-                $gst_rate = $item['gst_rate'] ?? 0;
-                $subtotal = $item['subtotal'];
-                $item_stmt->bind_param("isdidid", $id, $item_name, $price, $quantity, $discount, $gst_rate, $subtotal);
-                $item_stmt->execute();
-            }
-            $item_stmt->close();
-
-            $conn->commit();
-            echo json_encode(["success" => true]);
-        } catch (Exception $e) {
-            $conn->rollback();
-            echo json_encode(["error" => "Transaction failed: " . $e->getMessage()]);
+            exit;
         }
-        break;
 
-    case 'delete':
-        $data = getJsonInput();
-        $user_id = $_SESSION['user_id'];
-        $id = $data['id'] ?? 0;
-
-        $stmt = $conn->prepare("DELETE FROM invoices WHERE id=? AND user_id=?");
-        if (!$stmt) {
-            echo json_encode(["error" => "SQL Error: " . $conn->error]);
-            break;
+        if ($action === 'delete') {
+            $stmt = $pdo->prepare("DELETE FROM invoices WHERE id=? AND user_id=?");
+            $stmt->execute([$data['id'], $user_id]);
+            
+            // invoice_items will be deleted by CASCADE if supported, but let's be safe
+            $stmt_del = $pdo->prepare("DELETE FROM invoice_items WHERE invoice_id=?");
+            $stmt_del->execute([$data['id']]);
+            
+            echo json_encode(['success' => true]);
+            exit;
         }
-        $stmt->bind_param("ii", $id, $user_id);
-        
-        if ($stmt->execute()) {
-            echo json_encode(["success" => true]);
-        } else {
-            echo json_encode(["error" => $stmt->error]);
-        }
-        $stmt->close();
-        break;
+    }
 
-    default:
-        echo json_encode(["error" => "Invalid action requested"]);
-        break;
+    echo json_encode(['error' => 'Invalid action or method']);
+
+} catch (Throwable $e) {
+    if (ob_get_length()) ob_end_clean();
+    http_response_code(500);
+    echo json_encode(['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
 }
-} catch (Exception $e) {
-    ob_clean();
-    echo json_encode([
-        "error" => "Server Exception",
-        "details" => $e->getMessage()
-    ]);
-}
-
-$conn->close();
-?>

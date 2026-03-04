@@ -38,9 +38,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const headerLogoImg = document.getElementById('headerLogoImg');
     const defaultIconBox = document.getElementById('defaultIconBox');
 
+    // Navigation Elements
+    const navInvoices = document.getElementById('navInvoices');
+    const navCustomers = document.getElementById('navCustomers');
+    const invoicesView = document.getElementById('invoicesView');
+    const customersView = document.getElementById('customersView');
+
+    // Customer Elements
+    const customerForm = document.getElementById('customerForm');
+    const customerList = document.getElementById('customerList');
+    const customersEmptyState = document.getElementById('customersEmptyState');
+    const customerNameInput = document.getElementById('customerName');
+    const customerSuggestions = document.getElementById('customerSuggestions');
+
     let editingId = null;
+    let editingCustomerId = null;
     let userProfile = null;
     let allInvoices = [];
+    let allCustomers = [];
     let currentPage = 1;
     const pageSize = 10;
 
@@ -54,6 +69,196 @@ document.addEventListener('DOMContentLoaded', () => {
             .replace(/"/g, "&quot;")
             .replace(/'/g, "&#039;");
     };
+
+    // Navigation Logic
+    if (navInvoices && navCustomers) {
+        navInvoices.addEventListener('click', () => {
+            navInvoices.classList.add('active');
+            navCustomers.classList.remove('active');
+            invoicesView.classList.add('active');
+            customersView.classList.remove('active');
+            fetchInvoices();
+        });
+
+        navCustomers.addEventListener('click', () => {
+            navCustomers.classList.add('active');
+            navInvoices.classList.remove('active');
+            customersView.classList.add('active');
+            invoicesView.classList.remove('active');
+            fetchCustomers();
+        });
+    }
+
+    // Customer Management Logic
+    const fetchCustomers = async () => {
+        try {
+            const response = await fetch('api.php?action=customers_read');
+            if (response.ok) {
+                allCustomers = await response.json();
+                renderCustomers();
+            }
+        } catch (error) {
+            console.error('Error fetching customers:', error);
+        }
+    };
+
+    const renderCustomers = () => {
+        if (!customerList) return;
+        customerList.innerHTML = '';
+        
+        if (!allCustomers || allCustomers.length === 0) {
+            customersEmptyState.style.display = 'block';
+            return;
+        }
+
+        customersEmptyState.style.display = 'none';
+        allCustomers.forEach(cust => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${escapeHTML(cust.name)}</td>
+                <td>${escapeHTML(cust.phone)}</td>
+                <td>${escapeHTML(cust.email || '-')}</td>
+                <td class="text-right">
+                    <button class="btn-edit" data-id="${cust.id}">Edit</button>
+                    <button class="btn-delete" data-id="${cust.id}">Delete</button>
+                </td>
+            `;
+            customerList.appendChild(row);
+        });
+
+        // Add listeners
+        customerList.querySelectorAll('.btn-edit').forEach(btn => {
+            btn.addEventListener('click', () => handleEditCustomer(btn.dataset.id));
+        });
+        customerList.querySelectorAll('.btn-delete').forEach(btn => {
+            btn.addEventListener('click', () => handleDeleteCustomer(btn.dataset.id));
+        });
+    };
+
+    if (customerForm) {
+        customerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = {
+                name: document.getElementById('custName').value,
+                phone: document.getElementById('custPhone').value,
+                email: document.getElementById('custEmail').value,
+                address: document.getElementById('custAddress').value,
+                dob: document.getElementById('custDob').value
+            };
+
+            const action = editingCustomerId ? 'customers_update' : 'customers_create';
+            if (editingCustomerId) data.id = editingCustomerId;
+
+            try {
+                const response = await fetch(`api.php?action=${action}`, {
+                    method: 'POST',
+                    body: JSON.stringify(data),
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const result = await response.json();
+                if (result.success) {
+                    showStatus(editingCustomerId ? 'Customer updated!' : 'Customer added!', 'success');
+                    customerForm.reset();
+                    editingCustomerId = null;
+                    document.getElementById('saveCustomerBtn').textContent = 'SAVE CUSTOMER';
+                    document.getElementById('cancelCustomerBtn').style.display = 'none';
+                    fetchCustomers();
+                }
+            } catch (error) {
+                showStatus('Error saving customer', 'error');
+            }
+        });
+    }
+
+    const handleEditCustomer = (id) => {
+        const cust = allCustomers.find(c => c.id == id);
+        if (!cust) return;
+
+        editingCustomerId = id;
+        document.getElementById('custName').value = cust.name;
+        document.getElementById('custPhone').value = cust.phone;
+        document.getElementById('custEmail').value = cust.email || '';
+        document.getElementById('custAddress').value = cust.address || '';
+        document.getElementById('custDob').value = cust.dob || '';
+        
+        document.getElementById('saveCustomerBtn').textContent = 'UPDATE CUSTOMER';
+        document.getElementById('cancelCustomerBtn').style.display = 'inline-block';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const handleDeleteCustomer = async (id) => {
+        if (!confirm('Are you sure you want to delete this customer?')) return;
+        try {
+            const response = await fetch('api.php?action=customers_delete', {
+                method: 'POST',
+                body: JSON.stringify({ id }),
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const result = await response.json();
+            if (result.success) {
+                showStatus('Customer deleted!', 'success');
+                fetchCustomers();
+            }
+        } catch (error) {
+            showStatus('Error deleting customer', 'error');
+        }
+    };
+
+    const cancelCustomerBtn = document.getElementById('cancelCustomerBtn');
+    if (cancelCustomerBtn) {
+        cancelCustomerBtn.addEventListener('click', () => {
+            editingCustomerId = null;
+            customerForm.reset();
+            document.getElementById('saveCustomerBtn').textContent = 'SAVE CUSTOMER';
+            cancelCustomerBtn.style.display = 'none';
+        });
+    }
+
+    // Typeahead Logic
+    if (customerNameInput) {
+        customerNameInput.addEventListener('input', async (e) => {
+            const q = e.target.value;
+            if (q.length < 2) {
+                customerSuggestions.style.display = 'none';
+                return;
+            }
+
+            try {
+                const response = await fetch(`api.php?action=customers_search&q=${encodeURIComponent(q)}`);
+                const customers = await response.json();
+                
+                if (customers && customers.length > 0) {
+                    customerSuggestions.innerHTML = '';
+                    customers.forEach(cust => {
+                        const div = document.createElement('div');
+                        div.className = 'suggestion-item';
+                        div.innerHTML = `
+                            <span class="suggestion-name">${escapeHTML(cust.name)}</span>
+                            <span class="suggestion-phone">${escapeHTML(cust.phone)}</span>
+                        `;
+                        div.addEventListener('click', () => {
+                            customerNameInput.value = cust.name;
+                            customerSuggestions.style.display = 'none';
+                            // Optional: Fill other fields if they existed
+                        });
+                        customerSuggestions.appendChild(div);
+                    });
+                    customerSuggestions.style.display = 'block';
+                } else {
+                    customerSuggestions.style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Search error:', error);
+            }
+        });
+
+        // Close suggestions on outside click
+        document.addEventListener('click', (e) => {
+            if (e.target !== customerNameInput && e.target !== customerSuggestions) {
+                customerSuggestions.style.display = 'none';
+            }
+        });
+    }
 
     // Fetch User Info & Profile
     const fetchUserInfo = async () => {

@@ -36,6 +36,17 @@ db.exec(`
     expires_at DATETIME NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
+
+  CREATE TABLE IF NOT EXISTS customers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    phone TEXT NOT NULL,
+    email TEXT,
+    address TEXT,
+    dob DATE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
 `);
 
 import nodemailer from "nodemailer";
@@ -186,6 +197,18 @@ app.all("/api.php", (req, res) => {
             return res.json(invoices);
         }
 
+        if (action === 'customers_read') {
+            const customers = db.prepare("SELECT * FROM customers WHERE user_id = ? ORDER BY created_at DESC").all(mockSession.user_id);
+            return res.json(customers);
+        }
+
+        if (action === 'customers_search') {
+            const q = req.query.q || '';
+            const customers = db.prepare("SELECT * FROM customers WHERE user_id = ? AND (name LIKE ? OR phone LIKE ?) LIMIT 10")
+                .all(mockSession.user_id, `%${q}%`, `%${q}%`);
+            return res.json(customers);
+        }
+
         if (method === 'POST') {
             const data = req.body;
 
@@ -195,6 +218,27 @@ app.all("/api.php", (req, res) => {
                 const stmt = db.prepare("INSERT INTO invoices (user_id, customer_name, item_name, price, quantity, total) VALUES (?, ?, ?, ?, ?, ?)");
                 const result = stmt.run(mockSession.user_id, customer_name, item_name, price, quantity, total);
                 return res.json({ success: true, id: result.lastInsertRowid });
+            }
+
+            if (action === 'customers_create') {
+                const { name, phone, email, address, dob } = data;
+                const stmt = db.prepare("INSERT INTO customers (user_id, name, phone, email, address, dob) VALUES (?, ?, ?, ?, ?, ?)");
+                const result = stmt.run(mockSession.user_id, name, phone, email, address, dob);
+                return res.json({ success: true, id: result.lastInsertRowid });
+            }
+
+            if (action === 'customers_update') {
+                const { id, name, phone, email, address, dob } = data;
+                const stmt = db.prepare("UPDATE customers SET name=?, phone=?, email=?, address=?, dob=? WHERE id=? AND user_id=?");
+                stmt.run(name, phone, email, address, dob, id, mockSession.user_id);
+                return res.json({ success: true });
+            }
+
+            if (action === 'customers_delete') {
+                const { id } = data;
+                const stmt = db.prepare("DELETE FROM customers WHERE id=? AND user_id=?");
+                stmt.run(id, mockSession.user_id);
+                return res.json({ success: true });
             }
 
             if (action === 'update') {
