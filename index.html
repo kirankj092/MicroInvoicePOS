@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
     <title>Micro Invoice POS</title>
-    <link rel="stylesheet" href="style.css?v=2.3">
+    <link rel="stylesheet" href="style.css?v=2.4">
     <script>
-        // Quick Auth Check before page loads
-        fetch('auth_api.php?action=check')
+        // Quick Auth Check before page loads with cache busting
+        fetch('auth_api.php?action=check&t=' + Date.now())
             .then(res => res.json())
             .then(data => {
                 if (!data.authenticated) {
@@ -333,6 +333,6 @@
             </div>
         </div>
     </div>
-    <script src="script.js?v=2.3"></script>
+    <script src="script.js?v=2.4"></script>
 </body>
 </html>

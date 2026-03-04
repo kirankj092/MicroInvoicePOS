@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Fetch User Info & Profile
     const fetchUserInfo = async () => {
         try {
-            const response = await fetch('auth_api.php?action=check');
+            const response = await fetch('auth_api.php?action=check&t=' + Date.now());
             const data = await response.json();
             if (data.authenticated) {
                 userProfile = data.profile;
@@ -895,7 +895,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const customerForm = document.getElementById('customerForm');
 
     if (customersBtn) {
+        console.log("Customers button initialized and actionable");
         customersBtn.addEventListener('click', () => {
+            console.log("Customers button clicked");
             fetchCustomers();
             customersModal.style.display = 'block';
         });

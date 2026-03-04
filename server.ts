@@ -47,6 +47,17 @@ db.exec(`
     dob TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
+
+  CREATE TABLE IF NOT EXISTS profiles (
+    user_id INTEGER PRIMARY KEY,
+    shop_name TEXT,
+    address TEXT,
+    phone TEXT,
+    gstin TEXT,
+    email TEXT,
+    shop_logo TEXT,
+    signature TEXT
+  );
 `);
 
 import nodemailer from "nodemailer";
@@ -71,6 +82,7 @@ const app = express();
 const PORT = 3000;
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Mock session for preview - Persist to file to survive restarts
 const SESSION_FILE = './mock_session.json';
@@ -93,7 +105,7 @@ app.all("/auth_api.php", async (req, res) => {
     const method = req.method;
 
     try {
-        console.log(`Auth API call: action=${action}, method=${method}`);
+        console.log(`Auth API call: action=${action}, method=${method}, body=${JSON.stringify(req.body)}`);
         if (action === 'register') {
             const { username, email, password } = req.body;
             const stmt = db.prepare("INSERT INTO users (username, email, password) VALUES (?, ?, ?)");
@@ -115,9 +127,23 @@ app.all("/auth_api.php", async (req, res) => {
 
         if (action === 'check') {
             if (mockSession.user_id) {
-                return res.json({ authenticated: true, username: mockSession.username });
+                const profile = db.prepare("SELECT * FROM profiles WHERE user_id = ?").get(mockSession.user_id);
+                return res.json({ authenticated: true, username: mockSession.username, profile: profile || {} });
             }
             return res.json({ authenticated: false });
+        }
+
+        if (action === 'update_profile') {
+            const { shop_name, address, phone, gstin, email, shop_logo, signature } = req.body;
+            const exists = db.prepare("SELECT user_id FROM profiles WHERE user_id = ?").get(mockSession.user_id);
+            if (exists) {
+                db.prepare("UPDATE profiles SET shop_name=?, address=?, phone=?, gstin=?, email=?, shop_logo=?, signature=? WHERE user_id=?")
+                  .run(shop_name, address, phone, gstin, email, shop_logo, signature, mockSession.user_id);
+            } else {
+                db.prepare("INSERT INTO profiles (user_id, shop_name, address, phone, gstin, email, shop_logo, signature) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+                  .run(mockSession.user_id, shop_name, address, phone, gstin, email, shop_logo, signature);
+            }
+            return res.json({ success: true });
         }
 
         if (action === 'logout') {
