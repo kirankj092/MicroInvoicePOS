@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         try {
-            const response = await fetch('/api/auth?action=register', {
+            const response = await fetch('auth_api.php?action=register', {
                 method: 'POST',
                 body: JSON.stringify(data),
                 headers: { 'Content-Type': 'application/json' }
@@ -119,7 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         try {
-            const response = await fetch('/api/auth?action=login', {
+            const response = await fetch('auth_api.php?action=login', {
                 method: 'POST',
                 body: JSON.stringify(data),
                 headers: { 'Content-Type': 'application/json' }
@@ -171,7 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const email = document.getElementById('forgotEmail').value;
 
         try {
-            const response = await fetch('/api/auth?action=forgot-password', {
+            const response = await fetch('auth_api.php?action=forgot-password', {
                 method: 'POST',
                 body: JSON.stringify({ email }),
                 headers: { 'Content-Type': 'application/json' }
@@ -202,7 +202,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            const response = await fetch('/api/auth?action=verify-code', {
+            const response = await fetch('auth_api.php?action=verify-code', {
                 method: 'POST',
                 body: JSON.stringify({ email, code }),
                 headers: { 'Content-Type': 'application/json' }
@@ -234,7 +234,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            const response = await fetch('/api/auth?action=reset-password', {
+            const response = await fetch('auth_api.php?action=reset-password', {
                 method: 'POST',
                 body: JSON.stringify({ email, code, newPassword }),
                 headers: { 'Content-Type': 'application/json' }

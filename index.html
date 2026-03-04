@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="style.css?v=2.4">
     <script>
         // Quick Auth Check before page loads with cache busting
-        fetch('/api/auth?action=check&t=' + Date.now())
+        fetch('auth_api.php?action=check&t=' + Date.now())
             .then(res => res.json())
             .then(data => {
                 if (!data.authenticated) {
